@@ -8,7 +8,7 @@ binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "TAJER_KV"
-id = "PUT_YOUR_KV_ID"
+id = "87eb55cc6ef6414eb70fc9846650de27"
 
 [vars]
 GROQ_MODEL = "qwen/qwen3.8-27b"
