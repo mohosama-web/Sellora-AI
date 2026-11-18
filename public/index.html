@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تاجر AI - منصة الإعلانات الذكية</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div class="topbar">
+  <b>✨ تاجر AI</b>
+  <button class="btn-login-small" onclick="openLoginModal()">تسجيل الدخول</button>
+</div>
+<div class="container">
+  <div class="hero section">
+    <h1>صمّم إعلانك بالذكاء الاصطناعي</h1>
+    <p>مساعدك الذكي لإنشاء الإعلانات - أنشئ إعلاناً احترافياً يبيع منتجك - من هاتفك - خلال 30 ثانية فقط - اكتب فكرتك - وسيتولى الذكاء الاصطناعي كتابة الإعلان ووصف الصورة باللهجة التي تختارها</p>
+    <div class="canva-input">
+      <input id="heroProduct" placeholder="اكتب منتجك هنا... مثال: عطر عود ملكي">
+      <button onclick="heroTry()">أنشئ إعلانك خلال ثوانٍ ✨</button>
+    </div>
+    <p class="hint" style="color:#fff">🔥 انضم أكثر من 5,214 تاجراً هذا الأسبوع - تبقى 3 مقاعد مجانية اليوم</p>
+  </div>
+  <div id="tryArea" class="section bg-light">
+    <h2>🎁 جرّب إعلانك الأول مجاناً</h2>
+    <p>لا حاجة إلى التسجيل - جرّب مرة واحدة - واطّلع على النتيجة بنفسك</p>
+    <button id="tryBtn" onclick="startTrial()">جرّب مجاناً الآن ✨</button>
+  </div>
+  <div id="trialDoneBox" style="display:none">✅ لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً</div>
+  <div id="loginRequiredBox" style="display:none">
+    <h3>🔒 سجّل الآن للمتابعة</h3>
+    <p>انتهت تجربتك المجانية - سجّل عبر Google - وتابع مجاناً - 10 إعلانات يومياً</p>
+    <button class="btn-big btn-purple" onclick="openLoginModal()">التسجيل عبر Google - مجاناً</button>
+  </div>
+  <div class="canva-section">
+    <img src="https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=900&q=80" alt="تاجر يواجه صعوبة في إعلانه">
+    <span class="fomo-badge">😤 قبل تاجر AI</span>
+    <h2>لماذا لا يحقق إعلانك الحالي أي مبيعات؟</h2>
+    <p>تكتب الإعلان ليلاً - تنشره صباحاً - ولا يصلك أي تعليق - وتظن أن السوق متوقف - السوق ليس متوقفاً - الإعلان هو المتوقف - نص بارد - بلا لهجة محلية - بلا حماس - فيتجاوزه العميل ويتوجه إلى منافسك</p>
+    <button class="btn-big btn-purple" onclick="startTrial()">حسّن إعلانك - مجاناً ✨</button>
+  </div>
+  <div class="canva-section">
+    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80" alt="تاجر ينشئ إعلاناً">
+    <span class="fomo-badge" style="background:#dcfce7;color:#166534">✅ مع تاجر AI - خلال 30 ثانية</span>
+    <h2>أحمد أنشأ إعلانه - وهو يجلس في المقهى</h2>
+    <p>كتب: "عطر عود ملكي" - فكتب له تاجر AI إعلاناً حماسياً باللهجة التي اختارها + وصفاً جاهزاً للصورة - نسخه - ونشره على فيسبوك - فوصله أول تعليق بعد 4 دقائق: "كم السعر؟ وأين موقعك؟"</p>
+    <button class="btn-big btn-purple" onclick="startTrial()">أنشئ إعلانك مثل أحمد - مجاناً ✨</button>
+  </div>
+  <div class="canva-section">
+    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&q=80" alt="تاجرة">
+    <span class="fomo-badge" style="background:#fee2e2;color:#991b1b">🔥 إن لم تسجّل - فأنت الخاسر</span>
+    <h2>أميرة - تضاعفت مبيعاتها 3 مرات - وأنت ما زلت تشاهد؟</h2>
+    <p>كانت أميرة تبيع 10 طلبات يومياً - وأصبحت تبيع أكثر من 30 طلباً - لأن إعلانها أصبح بلهجتها - والعميلة تشعر أن الكلام موجّه إليها تحديداً<br><b>كل يوم تتأخر فيه - ينشر منافسك 3 إعلانات - ويستحوذ على عميلك</b></p>
+    <div class="loss-box">
+      <b>⚠️ كل يوم بدون تاجر AI يعني:</b>
+      <span>❌ 10 عملاء يتجهون إلى منافسك &nbsp; ❌ إعلانك يفقد تأثيره &nbsp; ❌ مبيعاتك متوقفة</span>
+    </div>
+    <button class="btn-big btn-green" onclick="openLoginModal()">سجّل الآن - قبل أن يذهب عميلك إلى غيرك 🚀</button>
+  </div>
+  <div class="canva-section">
+    <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=80" alt="تجهيز الطلبات">
+    <span class="fomo-badge" style="background:#dbeafe;color:#1e40af">📦 الطلبات لا تتوقف</span>
+    <h2>الطلبات أصبحت متواصلة - من الصباح حتى المساء</h2>
+    <p>يجهّز تاجر AI إعلاناتك تلقائياً - وأنت تتفرغ للتغليف والتوصيل فقط - عملك أصبح بيعاً - وليس كتابة إعلانات - تخيّل هاتفك يرنّ في كل لحظة - طلب جديد - طلب جديد - طلب جديد</p>
+    <button class="btn-big btn-purple" onclick="startTrial()">اجعل هاتفك يستقبل الطلبات - جرّب مجاناً</button>
+  </div>
+  <div class="section bg-orange">
+    <h2>قبل تاجر AI - وبعد تاجر AI</h2>
+    <div class="cards">
+      <div class="card" style="background:rgba(254,226,226,.9)"><b>❌ قبل - بدون تاجر AI</b><span>إعلان بارد - لا تعليقات - العملاء يذهبون إلى غيرك - ساعتان في الكتابة - مبيعات متوقفة</span></div>
+      <div class="card" style="background:rgba(220,252,231,.9)"><b>✅ بعد - مع تاجر AI</b><span>إعلان حماسي - تعليقات فورية - عملاء جدد يومياً - إعلان خلال 30 ثانية - مبيعات ×3</span></div>
+    </div>
+    <p><b>أين أنت الآن؟ قبل أم بعد؟</b></p>
+  </div>
+  <div class="section bg-green">
+    <h2>⭐ أكثر من 5,214 تاجراً - سجّلوا - فماذا تنتظر؟</h2>
+    <div class="cards">
+      <div class="card"><b>سارة - متجر عطور</b><span>"ندمت لأنني لم أسجّل مبكراً - أضعت شهراً كاملاً" ⭐⭐⭐⭐⭐</span></div>
+      <div class="card"><b>خالد - متجر إلكترونيات</b><span>"أول إعلان حقق لي 7 عملاء في اليوم نفسه" ⭐⭐⭐⭐⭐</span></div>
+      <div class="card"><b>نورة - مستحضرات تجميل</b><span>"أصبح العملاء يأتون إليّ بأنفسهم - لم أعد أبحث عنهم" ⭐⭐⭐⭐⭐</span></div>
+      <div class="card"><b>محمد - متجر ملابس</b><span>"لولا التسجيل - لاستحوذ منافسي على جميع عملائي" ⭐⭐⭐⭐⭐</span></div>
+    </div>
+  </div>
+  <div id="appBox" style="display:none">
+    <div id="quota">المتبقي لك اليوم: 10 إعلانات نصية</div>
+    <div id="userInfo" style="text-align:center;font-weight:800;margin:10px 0;color:#fff"></div>
+    <form id="adForm" novalidate>
+      <!-- 1 إجباري -->
+      <div class="field f-pink"><label>1. اسم المنتج / الخدمة / الموقع / التطبيق *</label><input id="product" placeholder="مثال: عطر عود ملكي" required></div>
+      <!-- 2 إجباري -->
+      <div class="field f-pink"><label>2. وصف مختصر / مميزات المنتج *</label><textarea id="productFeatures" placeholder="مثال: ثبات لمدة 24 ساعة - علبة فاخرة - رائحة قوية" required></textarea></div>
+      <!-- 3 إجباري -->
+      <div class="field f-blue"><label>3. الدولة *</label><select id="country" required><option value="">اختر الدولة *</option><option>السودان</option><option>السعودية</option><option>الإمارات</option><option>قطر</option><option>الكويت</option><option>البحرين</option><option>عُمان</option><option>مصر</option><option>الأردن</option><option>المغرب</option><option>الجزائر</option><option>تونس</option><option>العراق</option><option>أخرى</option></select></div>
+      <!-- 4 إجباري - مافي افتراضي - لازم يضغط وتظهر القائمة -->
+      <div class="field f-blue"><label>4. اللهجة *</label><select id="dialect" required><option value="">اختر اللهجة * - اضغط لعرض القائمة</option><option>سودانية</option><option>سعودية</option><option>إماراتية</option><option>خليجية</option><option>مصرية</option><option>مغربية</option><option>أردنية</option><option>عراقية</option><option>فصحى</option></select></div>
+      <!-- 5 اختياري -->
+      <div class="field f-yellow"><label>5. المدينة (اختياري)</label><input id="city" placeholder="مثال: الرياض - دبي - القاهرة"></div>
+      <!-- 6 إجباري -->
+      <div class="field f-yellow"><label>6. التصنيف - نوع الشي المعلن عنه *</label><select id="category" required><option value="">اختر التصنيف *</option><option>منتج</option><option>خدمة</option><option>موقع</option><option>تطبيق</option><option>متجر</option><option>عطور</option><option>مستحضرات تجميل</option><option>هواتف</option><option>ملابس</option><option>أغذية</option><option>خدمات</option><option>أخرى</option></select></div>
+      <!-- 7 اختياري -->
+      <div class="field f-green"><label>7. السعر (اختياري)</label><input id="price" placeholder="مثال: 50 - اكتب السعر وعملتك"></div>
+      <!-- 8 اختياري - مافي افتراضي -->
+      <div class="field f-green"><label>8. التوصيل (اختياري)</label><select id="delivery"><option value="">اختر (اختياري) - لا يوجد افتراضي</option><option>التوصيل متوفر</option><option>الاستلام من المتجر فقط</option><option>التوصيل + الاستلام</option><option>بدون توصيل</option></select></div>
+      <!-- 9 اختياري -->
+      <div class="field f-green"><label>9. طريقة الاستلام (اختياري)</label><select id="pickupMethod"><option value="">اختر (اختياري)</option><option>التوصيل إلى المنزل</option><option>الاستلام من المتجر</option><option>نقطة التقاء</option><option>الشحن إلى جميع المدن</option></select></div>
+      <!-- 10 اختياري -->
+      <div class="field f-purple"><label>10. رقم الواتساب (اختياري)</label><input id="whatsapp" placeholder="مثال: 00966500000000"></div>
+      <!-- 11 إجباري -->
+      <div class="field f-purple"><label>11. لغة الإعلان *</label><select id="lang" required><option value="">اختر لغة الإعلان *</option><option>عربي</option><option>English</option><option>عربي + English</option></select></div>
+      <!-- 12 إجباري -->
+      <div class="field f-orange"><label>12. طول الإعلان *</label><select id="length" required><option value="">اختر طول الإعلان *</option><option>قصير</option><option>متوسط</option><option>طويل</option></select></div>
+      <!-- 13 اختياري - افتراضي جميع المنصات -->
+      <div class="field f-orange"><label>13. المنصة (اختياري - الافتراضي: جميع المنصات)</label><select id="platform"><option value="">جميع المنصات</option><option>فيسبوك</option><option>واتساب</option><option>تيك توك</option><option>انستقرام</option></select></div>
+      <!-- 14 إجباري -->
+      <div class="field f-pink"><label>14. اسم المتجر / الخدمة / الموقع / التطبيق *</label><input id="shopName" placeholder="مثال: متجر النور" required></div>
+      <!-- 15 اختياري -->
+      <div class="field f-blue"><label>15. العرض / الخصم (اختياري)</label><input id="offer" placeholder="مثال: خصم 20% اليوم فقط"></div>
+      <!-- 16 اختياري - افتراضي الجميع -->
+      <div class="field f-yellow"><label>16. الجمهور المستهدف (اختياري - الافتراضي: الجميع)</label><select id="audience"><option value="">الجميع</option><option>نساء</option><option>رجال</option><option>شباب</option><option>عائلات</option></select></div>
+      <!-- 17 اختياري - افتراضي حماسية -->
+      <div class="field f-green"><label>17. نبرة الإعلان (اختياري - الافتراضي: حماسية)</label><select id="tone"><option value="">حماسية</option><option>رسمية</option><option>مرحة</option><option>فاخرة</option><option>عاطفية</option></select></div>
+      <!-- 18 اختياري -->
+      <div class="field f-purple"><label>18. رابط الصفحة (اختياري)</label><input id="pageLink" placeholder="رابط فيسبوك / انستقرام"></div>
+      <!-- 19 اختياري - افتراضي أرغب في وصف صورة -->
+      <div class="field f-orange"><label>19. هل لديك صورة؟ (اختياري - الافتراضي: أرغب في وصف صورة)</label><select id="hasImage"><option value="أرغب في وصف صورة">أرغب في وصف صورة</option><option value="">لا توجد صورة</option><option>لدي صورة</option></select></div>
+      <!-- 20 اختياري -->
+      <div class="field f-pink"><label>20. رابط الخدمة / الموقع / التطبيق (اختياري)</label><input id="serviceLink" placeholder="رابط واتساب / المتجر"></div>
+      <button type="submit" id="createBtn">إنشاء إعلان جديد ✨ - خلال ثوانٍ فقط</button>
+      <button type="button" id="recreateBtn" style="display:none;background:linear-gradient(90deg,#7c3aed,#a855f7)!important" onclick="submitRecreate()">🔁 إعادة إنشاء بصيغة أخرى - حيستهلك طلب واحد</button>
+      <p id="recreateHint" style="display:none;text-align:center;font-size:13px;color:#fde68a">🔁 انت هسي بتعيد إنشاء إعلان قديم - عدّل أي خانة - واضغط إعادة إنشاء - <a href="#" onclick="cancelRecreate();return false;" style="color:#fff;text-decoration:underline">إلغاء - وارجع لإعلان جديد</a></p>
+    </form>
+    <div id="result" style="display:none">
+      <h3>✅ إعلانك جاهز</h3>
+      <label>نص الإعلان</label><textarea id="adText" rows="8"></textarea>
+      <button onclick="copyText('adText')">📋 نسخ الإعلان</button>
+      <label>وصف الصورة</label><textarea id="imagePrompt" rows="4"></textarea>
+      <button onclick="copyText('imagePrompt')">📋 نسخ وصف الصورة</button>
+    </div>
+    <div id="history"></div>
+  </div>
+  <div class="section" style="background:linear-gradient(135deg,#dc2626,#ff6a00);color:#fff;border-radius:20px;margin:16px">
+    <h2 style="color:#fff">⚠️ إن لم تسجّل الآن - ستندم غداً</h2>
+    <p style="color:#fff">منافسك الآن ينشئ إعلانه عبر تاجر AI - ويستحوذ على عميلك - وأنت ما زلت تشاهد<br>إعلانك الأول هدية - مجاناً - بدون بطاقة - خلال 30 ثانية</p>
+    <button class="btn-big btn-green" onclick="openLoginModal()">سجّل الآن - مجاناً - قبل فوات الأوان 🚀</button>
+    <p class="hint" style="color:#fff">⏰ العرض المجاني ينتهي الليلة - سجّل أكثر من 5,214 تاجراً - تبقى 3 مقاعد</p>
+  </div>
+  <p class="hint">© 2026 تاجر AI - جميع الحقوق محفوظة</p>
+</div>
+<div class="sticky-cta"><button onclick="openLoginModal()">جرّب تاجر AI - مجاناً ✨ - سجّل الآن</button></div>
+<div id="loginModal" class="login-modal">
+  <div class="login-card">
+    <h2>تسجيل الدخول 👋</h2>
+    <p>مرحباً بك! سجّل الآن لتبدأ مع تاجر AI<br><b>⚠️ كل دقيقة تأخير - عميل يتجه إلى منافسك</b><br>10 إعلانات مجانية يومياً - باللهجة التي تختارها</p>
+    <div id="g_id_onload" data-callback="onGoogleLogin" data-auto_prompt="false"></div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="continue_with" data-shape="pill" data-logo_alignment="left"></div>
+    <p class="hint">بالمتابعة - أنت توافق على شروط الاستخدام وسياسة الخصوصية</p>
+    <button class="btn-close" onclick="closeLoginModal()">إغلاق ✕</button>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+        </html>
