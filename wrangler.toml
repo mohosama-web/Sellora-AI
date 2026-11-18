@@ -1,0 +1,17 @@
+name = "tajer-ai"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "TAJER_KV"
+id = "PUT_YOUR_KV_ID"
+
+[vars]
+GROQ_MODEL = "qwen/qwen3.8-27b"
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GOOGLE_STUDIO_MODEL = "gemma-4-31b-it"
+GOOGLE_STUDIO_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
