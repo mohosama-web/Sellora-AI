@@ -47,10 +47,24 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 .closeBtn{background:#333 !important;color:#fff !important;border:none !important;width:36px;height:36px;border-radius:50% !important;font-size:18px;cursor:pointer;flex-shrink:0}
 .skipBtn{width:100%;background:transparent;color:#94a3b8;border:1px solid #333;padding:10px;border-radius:10px;margin-top:8px;cursor:pointer}
 .createAdTrigger{background:#1a1f3a;border:1px solid #2a2f55;border-radius:16px;padding:14px;text-align:center}
+/* ===== الشعار في دائرة بيضاء صغيرة ===== */
+.logoCircle{width:32px;height:32px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.logoCircle img{width:28px !important;height:28px !important;min-height:0 !important;background:#fff !important;object-fit:contain;border-radius:50%;margin:0;padding:0}
 </style>
 </head>
 <body>
-<header><button id="loginBtnTop" onclick="openLoginModal()">تسجيل الدخول</button><b>Tajer <span>AI</span> 🤖</b><button id="menuBtnTop" onclick="toggleMenu()">☰</button></header>
+<header>
+  <!-- اليمين: الشعار + الاسم -->
+  <div style="display:flex;align-items:center;gap:7px;">
+    <div class="logoCircle"><img src="/images/logo.png" alt="Tajer AI"></div>
+    <b>Tajer <span>AI</span></b>
+  </div>
+  <!-- اليسار: القائمة + زر الدخول -->
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button id="menuBtnTop" onclick="toggleMenu()">☰</button>
+    <button id="loginBtnTop" onclick="openLoginModal()">تسجيل الدخول</button>
+  </div>
+</header>
 
 <div class="hero">
 <span class="badge">✨ صانع الإعلانات الذكية</span>
