@@ -3,161 +3,376 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>تاجر AI - منصة الإعلانات الذكية</title>
+<title>Tajer AI - منصة الإعلانات الذكية</title>
+<link rel="icon" href="https://i.ibb.co/QyFBpS2/IMG-20261119-WA2808.jpg">
+<link rel="apple-touch-icon" href="https://i.ibb.co/QyFBpS2/IMG-20261119-WA2808.jpg">
+<meta property="og:title" content="Tajer AI - صمّم إعلانك بالذكاء الاصطناعي">
+<meta property="og:description" content="صمّم إعلانك بالذكاء الاصطناعي خلال 30 ثانية فقط - جرّبه مجاناً الآن">
+<meta property="og:image" content="https://i.ibb.co/QyFBpS2/IMG-20261119-WA2808.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://i.ibb.co/QyFBpS2/IMG-20261119-WA2808.jpg">
 <link rel="stylesheet" href="style.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;background:#0f172a;color:#f8fafc;line-height:1.7}
+  a{color:inherit;text-decoration:none}
+  /* ===== الهيدر - غامق - الشعار يمين - الدخول يسار ===== */
+  .topbar{position:sticky;top:0;z-index:100;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.1);height:60px;display:flex;align-items:center}
+  .topbar-inner{width:100%;max-width:1120px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:8px;cursor:pointer}
+  /* ===== الحل الأول - الشعار داخل دائرة بيضاء - جميل على الغامق ===== */
+  .logo img{
+    width:38px;height:38px;
+    background:#fff;
+    padding:4px;
+    border-radius:50%;
+    object-fit:contain;
+    border:1px solid rgba(255,255,255,.2);
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+    flex-shrink:0;
+  }
+  .logo b{font-size:18px;font-weight:800;color:#fff}
+  .logo span{color:#a78bfa}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .btn-login{padding:8px 16px;background:#fff;color:#0f172a;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer}
+  .btn-menu{width:38px;height:38px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:9px;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center}
+  .btn-menu.show{display:flex}
+  /* ===== القائمة الجانبية ===== */
+  .menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none}
+  .menu-overlay.show{display:block}
+  .side-menu{position:fixed;top:0;left:0;width:260px;height:100%;background:#1e293b;z-index:1001;transform:translateX(-100%);transition:.28s;box-shadow:8px 0 30px rgba(0,0,0,.4);padding:18px;display:flex;flex-direction:column;gap:6px}
+  .side-menu.open{transform:translateX(0)}
+  .side-menu a{padding:11px 12px;border-radius:10px;font-weight:600;color:#e2e8f0;font-size:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+  .menu-close{align-self:flex-start;background:none;border:none;font-size:17px;cursor:pointer;margin-bottom:6px;color:#94a3b8}
+  #sideUserBox{display:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);padding:12px;border-radius:10px;font-weight:700;text-align:center;margin-bottom:6px;font-size:14px;color:#fff}
+  /* ===== الحاوية ===== */
+  .container{max-width:1120px;margin:0 auto;padding:0 16px 40px}
+  /* ===== Hero ===== */
+  .hero{padding:32px 0 22px;display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:center}
+  .hero h1{font-size:30px;line-height:1.45;margin:0 0 10px;color:#fff}
+  .hero h1 span{color:#a78bfa}
+  .hero p{color:#cbd5e1;font-size:15px;margin:0 0 16px}
+  .hero-card{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px}
+  .hero-card label{font-weight:700;font-size:13px;display:block;margin-bottom:7px;color:#fff}
+  .hero-card input{width:100%;padding:10px 12px;border:1px solid #334155;border-radius:9px;font-size:14px;background:#0f172a;color:#fff}
+  .hero-card button{width:100%;margin-top:10px;padding:11px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+  .hero-card small{display:block;text-align:center;color:#94a3b8;margin-top:8px;font-size:12px}
+  .hero-meta{display:flex;gap:14px;margin-top:12px;color:#94a3b8;font-size:12px}
+  .hero-meta b{color:#fff}
+  .hero-img{width:100%;height:250px;object-fit:cover;border-radius:14px}
+  /* ===== فقاعات صغيرة ===== */
+  .badge-small{display:inline-block;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:10px}
+  .badge-purple{background:#2e1065;color:#c4b5fd}
+  .badge-green{background:#14532d;color:#bbf7d0}
+  .badge-red{background:#7f1d1d;color:#fecaca}
+  .badge-blue{background:#1e3a8a;color:#bfdbfe}
+  /* ===== لوحة المستخدم ===== */
+  .dashboard{display:none;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;margin:8px 0 18px;align-items:center;justify-content:space-between;gap:12px}
+  .dashboard.show{display:flex}
+  .dashboard h2{margin:0;font-size:17px;color:#fff}
+  .dashboard p{margin:2px 0 0;color:#94a3b8;font-size:12px}
+  .d-actions{display:flex;gap:8px}
+  .btn-primary{padding:9px 14px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:13px}
+  .btn-ghost{padding:9px 14px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:9px;font-weight:700;cursor:pointer;font-size:13px}
+  /* ===== أقسام ===== */
+  .section{padding:24px 0;border-top:1px solid rgba(255,255,255,.08)}
+  .section h2{font-size:21px;margin:0 0 6px;color:#fff}
+  .section>p{color:#cbd5e1;margin:0 0 16px;font-size:14px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .card{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px}
+  .card b{display:block;margin-bottom:4px;font-size:14px;color:#fff}
+  .card span{color:#cbd5e1;font-size:13px;line-height:1.6}
+  .card .icon{width:36px;height:36px;background:#2e1065;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:center}
+  .split img{width:100%;height:220px;object-fit:cover;border-radius:12px}
+  .split ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;color:#e2e8f0;font-size:14px}
+  .split ul li::before{content:"✓ ";color:#a78bfa;font-weight:800}
+  .btn-link{color:#a78bfa;font-weight:700;font-size:13px;cursor:pointer;background:none;border:none;padding:0}
+  /* ===== نموذج الإعلان ===== */
+  #appBox{display:none;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:18px;margin-top:16px}
+  #appBox h2{color:#fff}
+  #quota{font-size:12px;color:#94a3b8;margin-bottom:12px}
+  #adForm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field.full{grid-column:1/-1}
+  .field label{font-weight:600;font-size:12px;color:#e2e8f0}
+  .field input,.field select,.field textarea{padding:10px 11px;border:1px solid #334155;border-radius:9px;font-size:14px;width:100%;background:#0f172a;color:#fff}
+  .field textarea{min-height:64px}
+  #createBtn{grid-column:1/-1;padding:12px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+  #recreateBtn{grid-column:1/-1;padding:11px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-weight:700;cursor:pointer;display:none}
+  #result{display:none;margin-top:16px;border-top:1px solid rgba(255,255,255,.1);padding-top:14px}
+  #result h3{color:#fff}
+  #result textarea{width:100%;padding:11px;border:1px solid #334155;border-radius:9px;font-size:14px;line-height:1.8;background:#0f172a;color:#fff}
+  #result button{padding:9px 12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;margin:6px 0}
+  /* ===== صفحات كاملة ===== */
+  .full-page{position:fixed;inset:0;background:#0f172a;z-index:2000;overflow-y:auto;padding:18px;display:none}
+  .full-page.show{display:block}
+  .full-page-inner{max-width:680px;margin:0 auto}
+  .full-page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .full-page-head h2{color:#fff}
+  .full-page-head button{color:#fff}
+  .ad-name-item{background:#1e293b;border:1px solid rgba(255,255,255,.1);padding:12px 14px;border-radius:10px;margin-bottom:8px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;font-size:14px;color:#fff}
+  .ad-detail-text{width:100%;min-height:180px;padding:12px;border:1px solid #334155;border-radius:10px;font-size:14px;line-height:1.8;background:#1e293b;color:#fff}
+  .ad-detail-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .ad-detail-actions button{padding:11px;border-radius:9px;border:1px solid rgba(255,255,255,.15);font-weight:700;cursor:pointer;background:#1e293b;color:#fff;font-size:13px}
+  /* ===== مودال الدخول ===== */
+  .login-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:3000;display:none;align-items:center;justify-content:center;padding:16px}
+  .login-modal.show{display:flex}
+  .login-card{background:#1e293b;border-radius:14px;padding:22px;max-width:400px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.1)}
+  .login-card h2{margin:0 0 6px;font-size:19px;color:#fff}
+  .login-card p{color:#94a3b8;font-size:13px}
+  .btn-close{margin-top:12px;background:none;border:none;color:#94a3b8;cursor:pointer}
+  .footer{border-top:1px solid rgba(255,255,255,.08);padding:18px 0;color:#64748b;font-size:12px;display:flex;justify-content:space-between}
+  #trialDoneBox,#loginRequiredBox{display:none;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;text-align:center;margin:12px 0;font-size:14px;color:#fff}
+  @media(max-width:760px){
+    .hero{grid-template-columns:1fr;padding:22px 0 14px}
+    .hero h1{font-size:25px}
+    .hero-img{height:180px}
+    .grid3,.split,#adForm{grid-template-columns:1fr}
+    .dashboard{flex-direction:column;align-items:flex-start}
+    .footer{flex-direction:column;gap:4px}
+  }
+</style>
 </head>
 <body>
-<div class="topbar">
-  <b>✨ تاجر AI</b>
-  <button class="btn-login-small" onclick="openLoginModal()">تسجيل الدخول</button>
-</div>
+
+<!-- ===== الهيدر - الشعار يمين - الدخول يسار ===== -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <!-- الشعار - دائرة بيضاء - بالرابط الجديد -->
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+      <img src="https://i.ibb.co/QyFBpS2/IMG-20261119-WA2808.jpg" alt="Tajer AI">
+      <b>Tajer <span>AI</span></b>
+    </div>
+    <!-- تسجيل الدخول - في أقصى اليسار -->
+    <div class="top-actions">
+      <button class="btn-login" id="loginBtnTop" onclick="openLoginModal()">تسجيل الدخول</button>
+      <button class="btn-menu" id="menuBtnTop" onclick="toggleMenu()" aria-label="القائمة">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== القائمة الجانبية ===== -->
+<div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+<aside class="side-menu" id="sideMenu">
+  <button class="menu-close" onclick="toggleMenu()">✕ إغلاق</button>
+  <div id="sideUserBox"></div>
+  <a href="#" onclick="toggleMenu();window.scrollTo({top:0,behavior:'smooth'});return false;">الرئيسية</a>
+  <a href="#" onclick="toggleMenu();startTrial();return false;">جرّب مجاناً</a>
+  <a href="#" onclick="toggleMenu();document.getElementById('appBox').scrollIntoView({behavior:'smooth'});return false;">إنشاء إعلان</a>
+  <a href="#" onclick="toggleMenu();openMyAdsPage();return false;">إعلاناتي</a>
+  <a id="sideLoginLink" href="#" onclick="toggleMenu();openLoginModal();return false;">تسجيل الدخول</a>
+  <a href="https://wa.me/249115638515" target="_blank" rel="noopener">تواصل معنا - واتساب</a>
+  <a href="https://wa.me/249115638515?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%20-%20%D8%A3%D8%AD%D8%AA%D8%A7%D8%AC%20%D8%A5%D9%84%D9%89%20%D8%AF%D8%B9%D9%85%20%D9%81%D9%8A%20%D8%AA%D8%A7%D8%AC%D8%B1%20AI" target="_blank" rel="noopener">الدعم - واتساب</a>
+  <a id="sideLogoutLink" href="#" style="display:none;background:#7f1d1d !important;color:#fecaca !important" onclick="toggleMenu();logoutUser();return false;">تسجيل الخروج</a>
+</aside>
+
 <div class="container">
-  <div class="hero section">
-    <h1>صمّم إعلانك بالذكاء الاصطناعي</h1>
-    <p>مساعدك الذكي لإنشاء الإعلانات - أنشئ إعلاناً احترافياً يبيع منتجك - من هاتفك - خلال 30 ثانية فقط - اكتب فكرتك - وسيتولى الذكاء الاصطناعي كتابة الإعلان ووصف الصورة باللهجة التي تختارها</p>
-    <div class="canva-input">
-      <input id="heroProduct" placeholder="اكتب منتجك هنا... مثال: عطر عود ملكي">
-      <button onclick="heroTry()">أنشئ إعلانك خلال ثوانٍ ✨</button>
+  <section class="hero">
+    <div>
+      <span class="badge-small badge-purple">✨ منصة الإعلانات الذكية</span>
+      <h1>صمّم إعلانك بالذكاء الاصطناعي <span>خلال 30 ثانية</span></h1>
+      <p>اكتب فكرتك، وسيتولى Tajer AI كتابة الإعلان ووصف الصورة باللهجة التي تختارها، جاهزاً للنشر.</p>
+      <div class="hero-card">
+        <label>جرّب الآن - اكتب منتجك هنا</label>
+        <input id="heroProduct" placeholder="مثال: عطر عود ملكي">
+        <button onclick="heroTry()">إنشاء إعلانك</button>
+        <small>تجربة مجانية - بدون تسجيل</small>
+      </div>
+      <div class="hero-meta"><span><b>+5,214</b> تاجر</span><span><b>10</b> إعلانات يومياً مجاناً</span><span><b>30 ثانية</b> لكل إعلان</span></div>
     </div>
-    <p class="hint" style="color:#fff">🔥 انضم أكثر من 5,214 تاجراً هذا الأسبوع - تبقى 3 مقاعد مجانية اليوم</p>
-  </div>
-  <div id="tryArea" class="section bg-light">
-    <h2>🎁 جرّب إعلانك الأول مجاناً</h2>
-    <p>لا حاجة إلى التسجيل - جرّب مرة واحدة - واطّلع على النتيجة بنفسك</p>
-    <button id="tryBtn" onclick="startTrial()">جرّب مجاناً الآن ✨</button>
-  </div>
-  <div id="trialDoneBox" style="display:none">✅ لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً</div>
-  <div id="loginRequiredBox" style="display:none">
-    <h3>🔒 سجّل الآن للمتابعة</h3>
-    <p>انتهت تجربتك المجانية - سجّل عبر Google - وتابع مجاناً - 10 إعلانات يومياً</p>
-    <button class="btn-big btn-purple" onclick="openLoginModal()">التسجيل عبر Google - مجاناً</button>
-  </div>
-  <div class="canva-section">
-    <img src="https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=900&q=80" alt="تاجر يواجه صعوبة في إعلانه">
-    <span class="fomo-badge">😤 قبل تاجر AI</span>
-    <h2>لماذا لا يحقق إعلانك الحالي أي مبيعات؟</h2>
-    <p>تكتب الإعلان ليلاً - تنشره صباحاً - ولا يصلك أي تعليق - وتظن أن السوق متوقف - السوق ليس متوقفاً - الإعلان هو المتوقف - نص بارد - بلا لهجة محلية - بلا حماس - فيتجاوزه العميل ويتوجه إلى منافسك</p>
-    <button class="btn-big btn-purple" onclick="startTrial()">حسّن إعلانك - مجاناً ✨</button>
-  </div>
-  <div class="canva-section">
-    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80" alt="تاجر ينشئ إعلاناً">
-    <span class="fomo-badge" style="background:#dcfce7;color:#166534">✅ مع تاجر AI - خلال 30 ثانية</span>
-    <h2>أحمد أنشأ إعلانه - وهو يجلس في المقهى</h2>
-    <p>كتب: "عطر عود ملكي" - فكتب له تاجر AI إعلاناً حماسياً باللهجة التي اختارها + وصفاً جاهزاً للصورة - نسخه - ونشره على فيسبوك - فوصله أول تعليق بعد 4 دقائق: "كم السعر؟ وأين موقعك؟"</p>
-    <button class="btn-big btn-purple" onclick="startTrial()">أنشئ إعلانك مثل أحمد - مجاناً ✨</button>
-  </div>
-  <div class="canva-section">
-    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&q=80" alt="تاجرة">
-    <span class="fomo-badge" style="background:#fee2e2;color:#991b1b">🔥 إن لم تسجّل - فأنت الخاسر</span>
-    <h2>أميرة - تضاعفت مبيعاتها 3 مرات - وأنت ما زلت تشاهد؟</h2>
-    <p>كانت أميرة تبيع 10 طلبات يومياً - وأصبحت تبيع أكثر من 30 طلباً - لأن إعلانها أصبح بلهجتها - والعميلة تشعر أن الكلام موجّه إليها تحديداً<br><b>كل يوم تتأخر فيه - ينشر منافسك 3 إعلانات - ويستحوذ على عميلك</b></p>
-    <div class="loss-box">
-      <b>⚠️ كل يوم بدون تاجر AI يعني:</b>
-      <span>❌ 10 عملاء يتجهون إلى منافسك &nbsp; ❌ إعلانك يفقد تأثيره &nbsp; ❌ مبيعاتك متوقفة</span>
-    </div>
-    <button class="btn-big btn-green" onclick="openLoginModal()">سجّل الآن - قبل أن يذهب عميلك إلى غيرك 🚀</button>
-  </div>
-  <div class="canva-section">
-    <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=80" alt="تجهيز الطلبات">
-    <span class="fomo-badge" style="background:#dbeafe;color:#1e40af">📦 الطلبات لا تتوقف</span>
-    <h2>الطلبات أصبحت متواصلة - من الصباح حتى المساء</h2>
-    <p>يجهّز تاجر AI إعلاناتك تلقائياً - وأنت تتفرغ للتغليف والتوصيل فقط - عملك أصبح بيعاً - وليس كتابة إعلانات - تخيّل هاتفك يرنّ في كل لحظة - طلب جديد - طلب جديد - طلب جديد</p>
-    <button class="btn-big btn-purple" onclick="startTrial()">اجعل هاتفك يستقبل الطلبات - جرّب مجاناً</button>
-  </div>
-  <div class="section bg-orange">
-    <h2>قبل تاجر AI - وبعد تاجر AI</h2>
-    <div class="cards">
-      <div class="card" style="background:rgba(254,226,226,.9)"><b>❌ قبل - بدون تاجر AI</b><span>إعلان بارد - لا تعليقات - العملاء يذهبون إلى غيرك - ساعتان في الكتابة - مبيعات متوقفة</span></div>
-      <div class="card" style="background:rgba(220,252,231,.9)"><b>✅ بعد - مع تاجر AI</b><span>إعلان حماسي - تعليقات فورية - عملاء جدد يومياً - إعلان خلال 30 ثانية - مبيعات ×3</span></div>
-    </div>
-    <p><b>أين أنت الآن؟ قبل أم بعد؟</b></p>
-  </div>
-  <div class="section bg-green">
-    <h2>⭐ أكثر من 5,214 تاجراً - سجّلوا - فماذا تنتظر؟</h2>
-    <div class="cards">
-      <div class="card"><b>سارة - متجر عطور</b><span>"ندمت لأنني لم أسجّل مبكراً - أضعت شهراً كاملاً" ⭐⭐⭐⭐⭐</span></div>
-      <div class="card"><b>خالد - متجر إلكترونيات</b><span>"أول إعلان حقق لي 7 عملاء في اليوم نفسه" ⭐⭐⭐⭐⭐</span></div>
-      <div class="card"><b>نورة - مستحضرات تجميل</b><span>"أصبح العملاء يأتون إليّ بأنفسهم - لم أعد أبحث عنهم" ⭐⭐⭐⭐⭐</span></div>
-      <div class="card"><b>محمد - متجر ملابس</b><span>"لولا التسجيل - لاستحوذ منافسي على جميع عملائي" ⭐⭐⭐⭐⭐</span></div>
+    <img class="hero-img" src="https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=900&q=80" alt="تاجر">
+  </section>
+
+  <div class="dashboard" id="dashboard">
+    <div><h2 id="welcomeText">مرحباً بك</h2><p id="creditsText">لديك 3 إعلانات مجانية متبقية</p></div>
+    <div class="d-actions">
+      <button class="btn-primary" onclick="document.getElementById('appBox').scrollIntoView({behavior:'smooth'})">إنشاء إعلان جديد</button>
+      <button class="btn-ghost" onclick="openMyAdsPage()">إعلاناتي السابقة</button>
     </div>
   </div>
-  <div id="appBox" style="display:none">
+
+  <div id="tryArea" class="section">
+    <span class="badge-small badge-green">🎁 تجربة مجانية</span>
+    <h2>جرّب إعلانك الأول مجاناً</h2>
+    <p>لا حاجة إلى التسجيل. جرّب مرة واحدة واطّلع على النتيجة بنفسك.</p>
+    <button class="btn-primary" id="tryBtn" onclick="startTrial()">جرّب مجاناً الآن</button>
+  </div>
+  <div id="trialDoneBox">لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً</div>
+  <div id="loginRequiredBox"><h3 style="margin:0;color:#fff">سجّل الآن للمتابعة</h3><p style="color:#94a3b8">انتهت تجربتك المجانية - سجّل عبر Google وتابع مجاناً - 10 إعلانات يومياً</p><button class="btn-primary" onclick="openLoginModal()">التسجيل عبر Google - مجاناً</button></div>
+
+  <section class="section">
+    <span class="badge-small badge-red">لماذا لا يبيع إعلانك؟</span>
+    <h2>لماذا لا يحقق إعلانك الحالي مبيعات؟</h2>
+    <p>نص بارد، بلا لهجة محلية، بلا حماس - فيتجاوزه العميل ويتوجه إلى منافسك.</p>
+    <div class="grid3">
+      <div class="card"><div class="icon">✍️</div><b>نص احترافي باللهجة</b><span>إعلان مكتوب باللهجة التي يفهمها عميلك، ويشعر أن الكلام موجّه إليه.</span></div>
+      <div class="card"><div class="icon">🖼️</div><b>وصف جاهز للصورة</b><span>وصف دقيق للصورة، جاهز للاستخدام في أي أداة تصميم.</span></div>
+      <div class="card"><div class="icon">⚡</div><b>خلال 30 ثانية</b><span>اكتب فكرتك، انسخ الإعلان، انشره - دون انتظار مصمم أو كاتب محتوى.</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="split">
+      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80" alt="تاجر ينشئ إعلاناً">
+      <div>
+        <span class="badge-small badge-green">مع Tajer AI - خلال 30 ثانية</span>
+        <h2 style="margin-top:0">كيف يعمل Tajer AI؟</h2>
+        <ul>
+          <li>اكتب اسم المنتج ووصفاً مختصراً له</li>
+          <li>اختر الدولة واللهجة والمنصة</li>
+          <li>احصل على إعلان كامل + وصف للصورة</li>
+          <li>انسخه وانشره - واحفظه في إعلاناتي</li>
+        </ul>
+        <br><button class="btn-link" onclick="startTrial()">جرّب الآن مجاناً ←</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <span class="badge-small badge-blue">آراء التجار</span>
+    <h2>ماذا يقول التجار؟</h2>
+    <p>تجار من متاجر العطور والإلكترونيات ومستحضرات التجميل يستخدمون Tajer AI يومياً.</p>
+    <div class="grid3">
+      <div class="card"><b>سارة - متجر عطور</b><span>“أول إعلان حقق لي 7 عملاء في اليوم نفسه.”</span></div>
+      <div class="card"><b>خالد - متجر إلكترونيات</b><span>“أصبحت أنشئ إعلاني خلال دقيقة واحدة فقط.”</span></div>
+      <div class="card"><b>نورة - مستحضرات تجميل</b><span>“أصبح العملاء يأتون إليّ بأنفسهم.”</span></div>
+    </div>
+  </section>
+
+  <div id="appBox">
+    <h2 style="margin:0 0 6px">إنشاء إعلان جديد</h2>
     <div id="quota">المتبقي لك اليوم: 10 إعلانات نصية</div>
-    <div id="userInfo" style="text-align:center;font-weight:800;margin:10px 0;color:#fff"></div>
+    <div id="userInfo" style="font-weight:700;margin:8px 0;color:#e2e8f0"></div>
     <form id="adForm" novalidate>
-      <!-- 1 إجباري -->
-      <div class="field f-pink"><label>1. اسم المنتج / الخدمة / الموقع / التطبيق *</label><input id="product" placeholder="مثال: عطر عود ملكي" required></div>
-      <!-- 2 إجباري -->
-      <div class="field f-pink"><label>2. وصف مختصر / مميزات المنتج *</label><textarea id="productFeatures" placeholder="مثال: ثبات لمدة 24 ساعة - علبة فاخرة - رائحة قوية" required></textarea></div>
-      <!-- 3 إجباري -->
-      <div class="field f-blue"><label>3. الدولة *</label><select id="country" required><option value="">اختر الدولة *</option><option>السودان</option><option>السعودية</option><option>الإمارات</option><option>قطر</option><option>الكويت</option><option>البحرين</option><option>عُمان</option><option>مصر</option><option>الأردن</option><option>المغرب</option><option>الجزائر</option><option>تونس</option><option>العراق</option><option>أخرى</option></select></div>
-      <!-- 4 إجباري - مافي افتراضي - لازم يضغط وتظهر القائمة -->
-      <div class="field f-blue"><label>4. اللهجة *</label><select id="dialect" required><option value="">اختر اللهجة * - اضغط لعرض القائمة</option><option>سودانية</option><option>سعودية</option><option>إماراتية</option><option>خليجية</option><option>مصرية</option><option>مغربية</option><option>أردنية</option><option>عراقية</option><option>فصحى</option></select></div>
-      <!-- 5 اختياري -->
-      <div class="field f-yellow"><label>5. المدينة (اختياري)</label><input id="city" placeholder="مثال: الرياض - دبي - القاهرة"></div>
-      <!-- 6 إجباري -->
-      <div class="field f-yellow"><label>6. التصنيف - نوع الشي المعلن عنه *</label><select id="category" required><option value="">اختر التصنيف *</option><option>منتج</option><option>خدمة</option><option>موقع</option><option>تطبيق</option><option>متجر</option><option>عطور</option><option>مستحضرات تجميل</option><option>هواتف</option><option>ملابس</option><option>أغذية</option><option>خدمات</option><option>أخرى</option></select></div>
-      <!-- 7 اختياري -->
-      <div class="field f-green"><label>7. السعر (اختياري)</label><input id="price" placeholder="مثال: 50 - اكتب السعر وعملتك"></div>
-      <!-- 8 اختياري - مافي افتراضي -->
-      <div class="field f-green"><label>8. التوصيل (اختياري)</label><select id="delivery"><option value="">اختر (اختياري) - لا يوجد افتراضي</option><option>التوصيل متوفر</option><option>الاستلام من المتجر فقط</option><option>التوصيل + الاستلام</option><option>بدون توصيل</option></select></div>
-      <!-- 9 اختياري -->
-      <div class="field f-green"><label>9. طريقة الاستلام (اختياري)</label><select id="pickupMethod"><option value="">اختر (اختياري)</option><option>التوصيل إلى المنزل</option><option>الاستلام من المتجر</option><option>نقطة التقاء</option><option>الشحن إلى جميع المدن</option></select></div>
-      <!-- 10 اختياري -->
-      <div class="field f-purple"><label>10. رقم الواتساب (اختياري)</label><input id="whatsapp" placeholder="مثال: 00966500000000"></div>
-      <!-- 11 إجباري -->
-      <div class="field f-purple"><label>11. لغة الإعلان *</label><select id="lang" required><option value="">اختر لغة الإعلان *</option><option>عربي</option><option>English</option><option>عربي + English</option></select></div>
-      <!-- 12 إجباري -->
-      <div class="field f-orange"><label>12. طول الإعلان *</label><select id="length" required><option value="">اختر طول الإعلان *</option><option>قصير</option><option>متوسط</option><option>طويل</option></select></div>
-      <!-- 13 اختياري - افتراضي جميع المنصات -->
-      <div class="field f-orange"><label>13. المنصة (اختياري - الافتراضي: جميع المنصات)</label><select id="platform"><option value="">جميع المنصات</option><option>فيسبوك</option><option>واتساب</option><option>تيك توك</option><option>انستقرام</option></select></div>
-      <!-- 14 إجباري -->
-      <div class="field f-pink"><label>14. اسم المتجر / الخدمة / الموقع / التطبيق *</label><input id="shopName" placeholder="مثال: متجر النور" required></div>
-      <!-- 15 اختياري -->
-      <div class="field f-blue"><label>15. العرض / الخصم (اختياري)</label><input id="offer" placeholder="مثال: خصم 20% اليوم فقط"></div>
-      <!-- 16 اختياري - افتراضي الجميع -->
-      <div class="field f-yellow"><label>16. الجمهور المستهدف (اختياري - الافتراضي: الجميع)</label><select id="audience"><option value="">الجميع</option><option>نساء</option><option>رجال</option><option>شباب</option><option>عائلات</option></select></div>
-      <!-- 17 اختياري - افتراضي حماسية -->
-      <div class="field f-green"><label>17. نبرة الإعلان (اختياري - الافتراضي: حماسية)</label><select id="tone"><option value="">حماسية</option><option>رسمية</option><option>مرحة</option><option>فاخرة</option><option>عاطفية</option></select></div>
-      <!-- 18 اختياري -->
-      <div class="field f-purple"><label>18. رابط الصفحة (اختياري)</label><input id="pageLink" placeholder="رابط فيسبوك / انستقرام"></div>
-      <!-- 19 اختياري - افتراضي أرغب في وصف صورة -->
-      <div class="field f-orange"><label>19. هل لديك صورة؟ (اختياري - الافتراضي: أرغب في وصف صورة)</label><select id="hasImage"><option value="أرغب في وصف صورة">أرغب في وصف صورة</option><option value="">لا توجد صورة</option><option>لدي صورة</option></select></div>
-      <!-- 20 اختياري -->
-      <div class="field f-pink"><label>20. رابط الخدمة / الموقع / التطبيق (اختياري)</label><input id="serviceLink" placeholder="رابط واتساب / المتجر"></div>
-      <button type="submit" id="createBtn">إنشاء إعلان جديد ✨ - خلال ثوانٍ فقط</button>
-      <button type="button" id="recreateBtn" style="display:none;background:linear-gradient(90deg,#7c3aed,#a855f7)!important" onclick="submitRecreate()">🔁 إعادة إنشاء بصيغة أخرى - حيستهلك طلب واحد</button>
-      <p id="recreateHint" style="display:none;text-align:center;font-size:13px;color:#fde68a">🔁 انت هسي بتعيد إنشاء إعلان قديم - عدّل أي خانة - واضغط إعادة إنشاء - <a href="#" onclick="cancelRecreate();return false;" style="color:#fff;text-decoration:underline">إلغاء - وارجع لإعلان جديد</a></p>
+      <div class="field full"><label>1. اسم المنتج / الخدمة / الموقع / التطبيق *</label><input id="product" placeholder="مثال: عطر عود ملكي" required></div>
+      <div class="field full"><label>2. وصف مختصر / مميزات المنتج *</label><textarea id="productFeatures" placeholder="مثال: ثبات لمدة 24 ساعة - علبة فاخرة" required></textarea></div>
+      <div class="field"><label>3. الدولة *</label><select id="country" required><option value="">اختر الدولة *</option><option>السعودية</option><option>الإمارات</option><option>قطر</option><option>الكويت</option><option>البحرين</option><option>عُمان</option><option>اليمن</option><option>العراق</option><option>الأردن</option><option>سوريا</option><option>لبنان</option><option>فلسطين</option><option>مصر</option><option>ليبيا</option><option>تونس</option><option>الجزائر</option><option>المغرب</option><option>موريتانيا</option><option>السودان</option><option>الصومال</option><option>جيبوتي</option><option>جزر القمر</option></select></div>
+      <div class="field"><label>4. اللهجة *</label><select id="dialect" required><option value="">اختر اللهجة *</option><option>سعودية - نجدية</option><option>سعودية - حجازية</option><option>سعودية - جنوبية</option><option>إماراتية</option><option>قطرية</option><option>كويتية</option><option>بحرينية</option><option>عمانية</option><option>يمنية - صنعانية</option><option>يمنية - عدنية</option><option>عراقية - بغدادية</option><option>عراقية - جنوبية</option><option>أردنية</option><option>فلسطينية</option><option>سورية - شامية</option><option>سورية - حلبية</option><option>لبنانية</option><option>مصرية - قاهرية</option><option>مصرية - صعيدية</option><option>مصرية - اسكندرانية</option><option>ليبية</option><option>تونسية</option><option>جزائرية</option><option>مغربية - دارجة</option><option>موريتانية - حسانية</option><option>سودانية - خرطومية</option><option>سودانية - دارفورية</option><option>سودانية - كردفانية</option><option>صومالية</option><option>جيبوتية</option><option>فصحى</option><option>فصحى مبسطة</option></select></div>
+      <div class="field"><label>5. المدينة (اختياري)</label><input id="city" placeholder="مثال: الرياض - دبي - القاهرة"></div>
+      <div class="field"><label>6. التصنيف *</label><select id="category" required><option value="">اختر التصنيف *</option><option>منتج</option><option>خدمة</option><option>موقع</option><option>تطبيق</option><option>متجر</option><option>عطور</option><option>مستحضرات تجميل</option><option>هواتف</option><option>ملابس</option><option>أغذية</option><option>خدمات</option><option>أخرى</option></select></div>
+      <div class="field"><label>7. السعر (اختياري)</label><input id="price" placeholder="مثال: 50 - اكتب السعر وعملتك"></div>
+      <div class="field"><label>8. التوصيل (اختياري)</label><select id="delivery"><option value="">اختر (اختياري)</option><option>التوصيل متوفر</option><option>الاستلام من المتجر فقط</option><option>التوصيل + الاستلام</option><option>بدون توصيل</option></select></div>
+      <div class="field"><label>9. طريقة الاستلام (اختياري)</label><select id="pickupMethod"><option value="">اختر (اختياري)</option><option>التوصيل إلى المنزل</option><option>الاستلام من المتجر</option><option>نقطة التقاء</option><option>الشحن إلى جميع المدن</option></select></div>
+      <div class="field"><label>10. رقم الواتساب (اختياري)</label><input id="whatsapp" placeholder="مثال: 00966500000000"></div>
+      <div class="field"><label>11. لغة الإعلان *</label><select id="lang" required><option value="">اختر لغة الإعلان *</option><option>عربي</option><option>English</option><option>عربي + English</option></select></div>
+      <div class="field"><label>12. طول الإعلان *</label><select id="length" required><option value="">اختر طول الإعلان *</option><option>قصير</option><option>متوسط</option><option>طويل</option></select></div>
+      <div class="field"><label>13. المنصة (اختياري)</label><select id="platform"><option value="">جميع المنصات</option><option>فيسبوك</option><option>واتساب</option><option>تيك توك</option><option>انستقرام</option></select></div>
+      <div class="field"><label>14. اسم المتجر *</label><input id="shopName" placeholder="مثال: متجر النور" required></div>
+      <div class="field"><label>15. العرض / الخصم (اختياري)</label><input id="offer" placeholder="مثال: خصم 20% اليوم فقط"></div>
+      <div class="field"><label>16. الجمهور المستهدف (اختياري)</label><select id="audience"><option value="">الجميع</option><option>نساء</option><option>رجال</option><option>شباب</option><option>عائلات</option></select></div>
+      <div class="field"><label>17. نبرة الإعلان (اختياري)</label><select id="tone"><option value="">حماسية</option><option>رسمية</option><option>مرحة</option><option>فاخرة</option><option>عاطفية</option></select></div>
+      <div class="field"><label>18. رابط الصفحة (اختياري)</label><input id="pageLink" placeholder="رابط فيسبوك / انستقرام"></div>
+      <div class="field"><label>19. هل لديك صورة؟</label><select id="hasImage"><option value="أرغب في وصف صورة">أرغب في وصف صورة</option><option value="">لا توجد صورة</option><option>لدي صورة</option></select></div>
+      <div class="field"><label>20. رابط الخدمة (اختياري)</label><input id="serviceLink" placeholder="رابط واتساب / المتجر"></div>
+      <button type="submit" id="createBtn">إنشاء إعلان جديد</button>
+      <button type="button" id="recreateBtn" onclick="submitRecreate()">إعادة إنشاء بصيغة أخرى</button>
     </form>
-    <div id="result" style="display:none">
-      <h3>✅ إعلانك جاهز</h3>
-      <label>نص الإعلان</label><textarea id="adText" rows="8"></textarea>
-      <button onclick="copyText('adText')">📋 نسخ الإعلان</button>
-      <label>وصف الصورة</label><textarea id="imagePrompt" rows="4"></textarea>
-      <button onclick="copyText('imagePrompt')">📋 نسخ وصف الصورة</button>
+    <div id="result">
+      <h3 style="margin:0 0 10px">إعلانك جاهز</h3>
+      <label style="font-weight:600;font-size:13px;color:#fff">نص الإعلان</label><textarea id="adText" rows="8"></textarea>
+      <button onclick="copyText('adText')">نسخ الإعلان</button>
+      <label style="display:block;font-weight:600;font-size:13px;margin-top:10px;color:#fff">وصف الصورة</label><textarea id="imagePrompt" rows="4"></textarea>
+      <button onclick="copyText('imagePrompt')">نسخ وصف الصورة</button>
     </div>
     <div id="history"></div>
   </div>
-  <div class="section" style="background:linear-gradient(135deg,#dc2626,#ff6a00);color:#fff;border-radius:20px;margin:16px">
-    <h2 style="color:#fff">⚠️ إن لم تسجّل الآن - ستندم غداً</h2>
-    <p style="color:#fff">منافسك الآن ينشئ إعلانه عبر تاجر AI - ويستحوذ على عميلك - وأنت ما زلت تشاهد<br>إعلانك الأول هدية - مجاناً - بدون بطاقة - خلال 30 ثانية</p>
-    <button class="btn-big btn-green" onclick="openLoginModal()">سجّل الآن - مجاناً - قبل فوات الأوان 🚀</button>
-    <p class="hint" style="color:#fff">⏰ العرض المجاني ينتهي الليلة - سجّل أكثر من 5,214 تاجراً - تبقى 3 مقاعد</p>
-  </div>
-  <p class="hint">© 2026 تاجر AI - جميع الحقوق محفوظة</p>
+
+  <footer class="footer"><span>© 2026 Tajer AI - جميع الحقوق محفوظة</span><span>شروط الاستخدام • سياسة الخصوصية</span></footer>
 </div>
-<div class="sticky-cta"><button onclick="openLoginModal()">جرّب تاجر AI - مجاناً ✨ - سجّل الآن</button></div>
+
 <div id="loginModal" class="login-modal">
   <div class="login-card">
-    <h2>تسجيل الدخول 👋</h2>
-    <p>مرحباً بك! سجّل الآن لتبدأ مع تاجر AI<br><b>⚠️ كل دقيقة تأخير - عميل يتجه إلى منافسك</b><br>10 إعلانات مجانية يومياً - باللهجة التي تختارها</p>
+    <h2>تسجيل الدخول</h2>
+    <p>مرحباً بك في Tajer AI<br>10 إعلانات مجانية يومياً - باللهجة التي تختارها</p>
     <div id="g_id_onload" data-callback="onGoogleLogin" data-auto_prompt="false"></div>
-    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="continue_with" data-shape="pill" data-logo_alignment="left"></div>
-    <p class="hint">بالمتابعة - أنت توافق على شروط الاستخدام وسياسة الخصوصية</p>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="continue_with" data-shape="rectangular" data-logo_alignment="left"></div>
+    <p style="font-size:12px">بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية</p>
     <button class="btn-close" onclick="closeLoginModal()">إغلاق ✕</button>
   </div>
 </div>
+
+<div class="full-page" id="myAdsPage"><div class="full-page-inner">
+  <div class="full-page-head"><h2 style="margin:0">إعلاناتي السابقة</h2><button onclick="closeMyAdsPage()" style="font-size:20px;background:none;border:none;cursor:pointer">✕</button></div>
+  <p style="color:#94a3b8;font-size:14px">اضغط على أي إعلان لعرضه كاملاً</p>
+  <div id="myAdsNamesList"></div>
+  <button onclick="closeMyAdsPage();document.getElementById('appBox').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="width:100%;margin-top:14px">إنشاء إعلان جديد</button>
+</div></div>
+
+<div class="full-page" id="adDetailPage"><div class="full-page-inner">
+  <div class="full-page-head"><h2 id="adDetailTitle" style="margin:0;font-size:18px">إعلان</h2><button onclick="closeAdDetail()" style="font-size:20px;background:none;border:none;cursor:pointer">✕</button></div>
+  <textarea class="ad-detail-text" id="adDetailText" readonly></textarea>
+  <label style="display:block;margin-top:14px;font-weight:600;font-size:13px;color:#fff">وصف الصورة</label>
+  <textarea class="ad-detail-text" id="adDetailImage" style="min-height:100px" readonly></textarea>
+  <div class="ad-detail-actions">
+    <button onclick="copyAdDetail()" style="background:#fff;color:#0f172a">نسخ الإعلان</button>
+    <button onclick="enableManualEdit()">تعديل يدوي</button>
+    <button onclick="saveManualEdit()" id="saveManualBtn" style="display:none;background:#16a34a;color:#fff">حفظ التعديل اليدوي</button>
+    <button onclick="aiEditAd()" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none">تعديل باستخدام الذكاء الاصطناعي</button>
+    <button onclick="recreateFromDetail()">إعادة إنشاء بصيغة أخرى</button>
+    <button onclick="deleteAdDetail()" style="background:#7f1d1d;color:#fecaca">حذف الإعلان</button>
+  </div>
+</div></div>
+
+<script>
+function toggleMenu(){
+  document.getElementById('sideMenu').classList.toggle('open');
+  document.getElementById('menuOverlay').classList.toggle('show');
+}
+function showDashboard(name, remaining){
+  const dash = document.getElementById('dashboard');
+  dash.classList.add('show');
+  document.getElementById('welcomeText').textContent = 'مرحباً بك يا ' + (name||'');
+  document.getElementById('creditsText').textContent = 'لديك ' + remaining + ' إعلانات مجانية متبقية';
+  document.getElementById('loginBtnTop').style.display = 'none';
+  document.getElementById('menuBtnTop').classList.add('show');
+  const sideBox = document.getElementById('sideUserBox');
+  if(sideBox){ sideBox.style.display='block'; sideBox.textContent = '👤 ' + (name||''); }
+  document.getElementById('sideLoginLink').style.display='none';
+  document.getElementById('sideLogoutLink').style.display='block';
+}
+function logoutUser(){
+  localStorage.removeItem('tajerUser');
+  document.getElementById('dashboard').classList.remove('show');
+  document.getElementById('loginBtnTop').style.display='block';
+  document.getElementById('menuBtnTop').classList.remove('show');
+  document.getElementById('sideUserBox').style.display='none';
+  document.getElementById('sideLoginLink').style.display='block';
+  document.getElementById('sideLogoutLink').style.display='none';
+  alert('تم تسجيل الخروج بنجاح');
+}
+let currentAdIndex = -1;
+function getMyAds(){ return JSON.parse(localStorage.getItem('myAds') || '[]'); }
+function saveMyAds(list){ localStorage.setItem('myAds', JSON.stringify(list)); }
+function openMyAdsPage(){
+  const list = getMyAds();
+  const box = document.getElementById('myAdsNamesList');
+  if(list.length===0){ box.innerHTML = '<div style="background:#1e293b;border:1px solid rgba(255,255,255,.1);padding:20px;border-radius:12px;text-align:center;color:#94a3b8">لم تقم بإنشاء أي إعلان بعد</div>'; }
+  else { box.innerHTML = list.map((ad,i)=>`<div class="ad-name-item" onclick="openAdDetail(${i})"><span>${ad.product || 'إعلان '+(i+1)}</span><span>‹</span></div>`).join(''); }
+  document.getElementById('myAdsPage').classList.add('show');
+}
+function closeMyAdsPage(){ document.getElementById('myAdsPage').classList.remove('show'); }
+function openAdDetail(i){
+  currentAdIndex = i;
+  const ad = getMyAds()[i];
+  document.getElementById('adDetailTitle').textContent = ad.product || 'إعلان';
+  document.getElementById('adDetailText').value = ad.text || '';
+  document.getElementById('adDetailImage').value = ad.imagePrompt || '';
+  document.getElementById('adDetailText').readOnly = true;
+  document.getElementById('saveManualBtn').style.display='none';
+  closeMyAdsPage();
+  document.getElementById('adDetailPage').classList.add('show');
+}
+function closeAdDetail(){ document.getElementById('adDetailPage').classList.remove('show'); }
+function copyAdDetail(){ navigator.clipboard.writeText(document.getElementById('adDetailText').value); alert('تم النسخ'); }
+function enableManualEdit(){ document.getElementById('adDetailText').readOnly=false; document.getElementById('adDetailText').focus(); document.getElementById('saveManualBtn').style.display='block'; }
+function saveManualEdit(){ const list=getMyAds(); list[currentAdIndex].text=document.getElementById('adDetailText').value; saveMyAds(list); document.getElementById('adDetailText').readOnly=true; document.getElementById('saveManualBtn').style.display='none'; alert('تم الحفظ'); }
+function aiEditAd(){ const ad=getMyAds()[currentAdIndex]; closeAdDetail(); document.getElementById('appBox').scrollIntoView({behavior:'smooth'}); document.getElementById('product').value=ad.product||''; const rb=document.getElementById('recreateBtn'); if(rb) rb.style.display='block'; if(typeof submitRecreate==='function') submitRecreate(); }
+function recreateFromDetail(){ const ad=getMyAds()[currentAdIndex]; closeAdDetail(); document.getElementById('appBox').scrollIntoView({behavior:'smooth'}); document.getElementById('product').value=ad.product||''; const rb=document.getElementById('recreateBtn'); if(rb) rb.style.display='block'; if(typeof submitRecreate==='function') submitRecreate(); }
+function deleteAdDetail(){ if(!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return; const list=getMyAds(); list.splice(currentAdIndex,1); saveMyAds(list); closeAdDetail(); openMyAdsPage(); }
+</script>
 <script src="app.js"></script>
 </body>
-        </html>
+  </html>
