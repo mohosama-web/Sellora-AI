@@ -7,6 +7,28 @@ let recreateIndex = -1;
 function el(id){ return document.getElementById(id); }
 function hide(id){ const e = el(id); if(e) e.style.display='none'; }
 function show(id, display='block'){ const e = el(id); if(e) e.style.display=display; }
+
+// ===== إظهار / إخفاء الـ 20 خانة - الجديد =====
+function showForm(){
+  var heroVal = el('heroProduct') ? el('heroProduct').value : '';
+  var sec = el('formSection');
+  if(sec){ sec.style.display='block'; sec.scrollIntoView({ behavior:'smooth' }); }
+  var p = el('product');
+  if(p && heroVal && !p.value){ p.value = heroVal; }
+  // لو تجربة مجانية - جهز وضع التجربة
+  if(!token && !isTrialUsed()){
+    isTrialMode = true;
+    if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط';
+    if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل';
+  }
+}
+function hideForm(){
+  var sec = el('formSection');
+  if(sec){ sec.style.display='none'; }
+  // ارجع للأعلى - ليرى المستخدم الأزرار مرة أخرى
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 async function loadConfig(){
   try{
     const r = await fetch('/api/config');
@@ -35,15 +57,34 @@ function closeLoginModal(){ const m = el('loginModal'); if(m) m.classList.remove
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeLoginModal(); });
 el('loginModal')?.addEventListener('click', function(e){ if(e.target === this) closeLoginModal(); });
 
-function heroTry(){ const v = el('heroProduct')?.value || ''; if(v.trim() && el('product')) el('product').value = v.trim(); startTrial(); }
+// ===== زر التجربة - الآن يفتح القائمة فقط =====
+function heroTry(){
+  const v = el('heroProduct')?.value || '';
+  if(v.trim() && el('product')) el('product').value = v.trim();
+  // لو استخدم التجربة من قبل - اطلب التسجيل
+  if(!token && isTrialUsed()){
+    alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً');
+    openLoginModal();
+    return;
+  }
+  showForm();
+}
 function startTrial(){
   if(isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; }
-  isTrialMode = true; hide('tryArea'); show('appBox');
+  isTrialMode = true;
+  hide('tryArea');
   if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط';
   if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل';
-  const app = el('appBox'); if(app) app.scrollIntoView({ behavior:'smooth' });
+  showForm();
 }
-function showLoginRequired(){ hide('appBox'); hide('result'); show('loginRequiredBox'); hide('tryArea'); show('trialDoneBox'); openLoginModal(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function showLoginRequired(){
+  hide('result');
+  hide('tryArea');
+  hideForm(); // اخفي القائمة - واظهر رسالة انتهاء التجربة
+  show('trialDoneBox');
+  openLoginModal();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 // ===== الإصلاح 1 - حفظ المستخدم واسترجاعه =====
 function onGoogleLogin(res){
@@ -52,16 +93,17 @@ function onGoogleLogin(res){
     if(d.token){
       token = d.token; localStorage.setItem('tajer_token', token);
       user = d.user;
-      // حفظ اسم المستخدم - حتى لا يختفي بعد تحديث الصفحة
       localStorage.setItem('tajer_user', JSON.stringify(d.user));
       isTrialMode = false;
-      closeLoginModal(); hide('loginRequiredBox'); hide('tryArea'); hide('trialDoneBox'); show('appBox');
+      closeLoginModal(); hide('loginRequiredBox'); hide('tryArea'); hide('trialDoneBox');
       if(el('userInfo')) el('userInfo').textContent = `أهلاً بك، ${user.name}`;
       const loginBtn = el('loginBtnTop'); if(loginBtn) loginBtn.style.display = 'none';
       const menuBtn = el('menuBtnTop'); if(menuBtn) menuBtn.classList.add('show');
       if(typeof showDashboard === 'function') showDashboard(user.name, 10 - todayCount);
       refreshQuota(); loadHistory();
-      const app = el('appBox'); if(app) app.scrollIntoView({ behavior:'smooth' });
+      // بعد التسجيل - لا نفتح القائمة تلقائياً - المستخدم يضغط "إنشاء إعلان جديد"
+      hideForm();
+      alert('تم تسجيل دخولك بنجاح ✅ - اضغط "إنشاء إعلان جديد" للبدء');
     }
     else alert(d.error || 'فشل تسجيل الدخول - يرجى المحاولة مرة أخرى');
   }).catch(()=> alert('حدثت مشكلة في الاتصال - يرجى المحاولة مرة أخرى'));
@@ -128,19 +170,14 @@ function fillFormFromPayload(p){
   set('hasImage', p.hasImage); set('serviceLink', p.serviceLink);
 }
 
-// ===== الإصلاح 2 - مزامنة ذكية - لا تمسح التعديلات والحذف =====
-// الفكرة: لا نبني myAds من الصفر كل مرة - فقط نضيف الجديد - ونحافظ على القديم
 function syncToMyAds(){
   const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]');
   let myAds = JSON.parse(localStorage.getItem('myAds')||'[]');
-  // إذا كانت myAds فارغة لأول مرة - ابنها من الهيستوري كاملاً
   if(myAds.length === 0){
     myAds = hist.map(h => ({ product: h.payload?.product || 'إعلان', text: h.adText, imagePrompt: h.imagePrompt, date: h.date }));
     localStorage.setItem('myAds', JSON.stringify(myAds));
     return;
   }
-  // إذا كانت موجودة - أضف فقط الإعلان الجديد - الذي ليس موجوداً أصلاً
-  // نعرف الجديد بمقارنة النص + التاريخ
   hist.forEach(h => {
     const exists = myAds.some(a => a.text === h.adText && a.date === h.date);
     if(!exists){
@@ -163,7 +200,7 @@ function startRecreate(i){
   show('result');
   if(el('adText')) el('adText').value = h.adText;
   if(el('imagePrompt')) el('imagePrompt').value = h.imagePrompt;
-  const form = el('adForm'); if(form) form.scrollIntoView({ behavior:'smooth' });
+  showForm(); // افتح القائمة - لأنها قد تكون مخفية
   alert('تم تحميل بيانات الإعلان القديم في الفورم - عدّل أي خانة - واضغط إعادة إنشاء بصيغة أخرى - حيستهلك طلب واحد من حصتك');
 }
 function cancelRecreate(){ isRecreateMode = false; recreateIndex = -1; show('createBtn'); hide('recreateBtn'); }
@@ -224,21 +261,23 @@ function loadHistory(){
 function showOld(i){ const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]'); const h = hist[i]; if(!h) return; show('result'); if(el('adText')) el('adText').value = h.adText; if(el('imagePrompt')) el('imagePrompt').value = h.imagePrompt; el('result')?.scrollIntoView({ behavior:'smooth' }); }
 function copyText(id){ const elm = el(id); if(!elm) return; elm.select(); if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(elm.value).then(()=> alert('تم النسخ بنجاح ✅ - يمكنك لصقه في أي مكان')); } else { document.execCommand('copy'); alert('تم النسخ بنجاح ✅ - يمكنك لصقه في أي مكان'); } }
 
-// ===== استعادة الجلسة عند فتح الموقع - مع الإصلاح 1 =====
+// ===== استعادة الجلسة عند فتح الموقع =====
 if(!token && isTrialUsed()){ hide('tryArea'); show('trialDoneBox'); }
 if(token){
-  hide('tryArea'); hide('trialDoneBox'); show('appBox');
-  // إخفاء زر الدخول - إظهار ☰ - إذا كان المستخدم مسجلاً من قبل
+  hide('tryArea'); hide('trialDoneBox');
+  // القائمة مخفية في البداية - حتى بعد التسجيل - تظهر فقط بزر "إنشاء إعلان جديد"
+  hideForm();
   const loginBtn = el('loginBtnTop'); if(loginBtn) loginBtn.style.display = 'none';
   const menuBtn = el('menuBtnTop'); if(menuBtn) menuBtn.classList.add('show');
   const sideLogin = el('sideLoginLink'); if(sideLogin) sideLogin.style.display = 'none';
   const sideLogout = el('sideLogoutLink'); if(sideLogout) sideLogout.style.display = 'block';
-  // إظهار اسم المستخدم المسترجع - حتى بعد تحديث الصفحة
   if(user && typeof showDashboard === 'function'){
-    // showDashboard سيتم تحديث الرصيد بعد refreshQuota
     showDashboard(user.name, 10 - todayCount);
   }
   if(user && el('userInfo')) el('userInfo').textContent = `أهلاً بك، ${user.name}`;
   if(user && el('sideUserBox')){ el('sideUserBox').style.display='block'; el('sideUserBox').textContent = '👤 ' + user.name; }
   refreshQuota(); loadHistory();
-}
+} else {
+  // زائر جديد - القائمة مخفية أيضاً
+  hideForm();
+                                  }
