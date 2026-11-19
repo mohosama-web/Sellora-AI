@@ -2,10 +2,6 @@ name = "tajer-ai"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-[assets]
-directory = "./public"
-binding = "ASSETS"
-
 [[kv_namespaces]]
 binding = "TAJER_KV"
 id = "87eb55cc6ef6414eb70fc9846650de27"
