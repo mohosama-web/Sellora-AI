@@ -26,6 +26,22 @@ const INSTRUCTION_GOOGLE_GEMMA = `
 رابعا: استخدم كل ما يرسله المستخدم، ولا تتجاهل أي معلومة. إذا كانت هناك خانة فارغة، تجاهلها بهدوء، ولا تخترع. اذكر اسم المتجر / الخدمة / الموقع / التطبيق، ورقم الواتساب، ورابط الصفحة، في نهاية الإعلان فقط. التزم بالنبرة والمنصة والطول المطلوب.
 خامسا: وصف الصورة. بعد الإعلان، اكتب وصفا كاملا للصورة بالإنجليزية. يجب أن يتوافق مع الشي المعلن عنه والعرض والجمهور. إذا كان منتجا صف المنتج. وإذا كانت خدمة صف شخصا يستخدم الخدمة. وإذا كان موقعا أو تطبيقا صف شاشة الهاتف تعرض الموقع / التطبيق. بدون أي نص داخل الصورة.
 `;
+
+// ===== إصلاح btoa مع الأسماء العربية - حتى لا يفشل تسجيل الدخول =====
+function b64Encode(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64Decode(str){
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while(str.length % 4) str += '=';
+  const bin = atob(str);
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
 function getAllKeys(env){
   return [
     { type: 'groq', key: env.GROQ_KEY1 },
@@ -105,10 +121,9 @@ function verifyToken(req){
   try{
     const parts = token.split('.');
     if(parts.length !== 3) return null;
-    return JSON.parse(atob(parts[1]));
+    return JSON.parse(b64Decode(parts[1]));
   }catch{ return null; }
 }
-// جديد: فحص الإجباري في السيرفر - 8 خانات
 function validateRequiredServer(b){
   if(!b.product || !String(b.product).trim()) return 'الخانة 1 - اسم المنتج - إجبارية';
   if(!b.productFeatures || !String(b.productFeatures).trim()) return 'الخانة 2 - وصف / مميزات المنتج - إجبارية';
@@ -171,10 +186,10 @@ export default {
     if(url.pathname === '/api/auth/google' && request.method === 'POST'){
       try{
         const { credential } = await request.json();
-        const payload = JSON.parse(atob(credential.split('.')[1]));
+        const payload = JSON.parse(b64Decode(credential.split('.')[1]));
         const user = { email: payload.email, name: payload.name };
-        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-        const body = btoa(JSON.stringify({ ...user, exp: Date.now() + 7*24*3600*1000 }));
+        const header = b64Encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+        const body = b64Encode(JSON.stringify({ ...user, exp: Date.now() + 7*24*3600*1000 }));
         const token = `${header}.${body}.sig`;
         return json({ token, user });
       }catch(e){ return json({ error: 'فشل التحقق من Google' }, 401); }
@@ -209,6 +224,24 @@ export default {
         await env.TAJER_KV.put(key, String(count + 1), { expirationTtl: 86400 });
         return json(out);
       }catch(e){ return json({ error: 'حدثت مشكلة في توليد الإعلان - يرجى المحاولة مرة أخرى' }, 500); }
+    }
+    // ===== الإصلاح الرئيسي - عرض ملفات الموقع - وليس Not Found =====
+    // أي طلب ليس /api - نرسله لملفات public
+    if(!url.pathname.startsWith('/api/')){
+      if(env.ASSETS){
+        try{
+          const assetRes = await env.ASSETS.fetch(request);
+          // إذا وجد الملف - أرجعه
+          if(assetRes.status !== 404) return assetRes;
+          // إذا لم يجد الملف - أرجع index.html - للموقع ذو الصفحة الواحدة
+          const indexReq = new Request(new URL('/index.html', request.url), request);
+          return await env.ASSETS.fetch(indexReq);
+        }catch(e){
+          // إذا لم تكن Assets مفعلة - أرجع رسالة واضحة
+          return new Response('Assets not configured - check wrangler.toml [assets]', { status: 500 });
+        }
+      }
+      return new Response('Not Found - Assets not configured', { status: 404 });
     }
     return new Response('Not Found', { status: 404 });
   }
