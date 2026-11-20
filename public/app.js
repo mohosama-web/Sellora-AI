@@ -1,7 +1,7 @@
 let token = localStorage.getItem('tajer_token') || '';
 let user = JSON.parse(localStorage.getItem('tajer_user') || 'null');
 let todayCount = 0; let isTrialMode = false;
-let appConfig = { googleClientId: '', monetagZoneId: '' };
+let appConfig = { googleClientId: '', monetagZoneId: '', monetagPopunderZoneId: '' };
 let isRecreateMode = false;
 let recreateIndex = -1;
 let pendingGoogle = null;
@@ -73,7 +73,7 @@ function previewPic(e){ let f=e.target.files[0]; if(!f) return; let rd=new FileR
 function finishCreateAccount(){ let name=el('accName')?.value.trim(); if(!name){ alert('يرجى كتابة اسمك'); return; } if(pendingGoogle){ user={...pendingGoogle, name}; pendingGoogle=null; } else if(user){ user.name=name; } else { alert('حدث خطأ - يرجى تسجيل الدخول مرة أخرى'); return; } localStorage.setItem('tajer_user', JSON.stringify(user)); saveKnownUser(user); if(token){ try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){} } updateHeader(); updateAuthUI(); showView('view-home'); refreshQuota(); }
 function showForm(){ var heroVal = el('heroProduct') ? el('heroProduct').value : ''; goCreateAd(); var p = el('product'); if(p && heroVal && !p.value){ p.value = heroVal; } if(!token && !isTrialUsed()){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; } }
 function hideForm(){ if(token) showView('view-home'); else showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-async function loadConfig(){ try{ const r = await fetch('/api/config'); const d = await r.json(); appConfig = d; const g = document.getElementById('g_id_onload'); if(g && d.googleClientId) g.setAttribute('data-client_id', d.googleClientId); if(d.monetagZoneId){ const s = document.createElement('script'); s.src = 'https://alwingulla.com/88/tag.min.js'; s.setAttribute('data-zone', d.monetagZoneId); s.setAttribute('data-cfasync', 'false'); s.async = true; document.head.appendChild(s); } }catch(e){} }
+async function loadConfig(){ try{ const r = await fetch('/api/config'); const d = await r.json(); appConfig = d; const g = document.getElementById('g_id_onload'); if(g && d.googleClientId) g.setAttribute('data-client_id', d.googleClientId); if(d.monetagZoneId){ const s = document.createElement('script'); s.src = 'https://alwingulla.com/88/tag.min.js'; s.setAttribute('data-zone', d.monetagZoneId); s.setAttribute('data-cfasync', 'false'); s.async = true; document.head.appendChild(s); } if(d.monetagPopunderZoneId){ const s2 = document.createElement('script'); s2.src = 'https://alwingulla.com/88/tag.min.js'; s2.setAttribute('data-zone', d.monetagPopunderZoneId); s2.setAttribute('data-cfasync', 'false'); s2.async = true; document.head.appendChild(s2); } }catch(e){} }
 loadConfig();
 async function refreshQuota(){ if(!token) return; try{ const r = await fetch('/api/quota', { headers: { Authorization: 'Bearer '+token }}); const d = await r.json(); todayCount = d.count || 0; if(el('quota')) el('quota').textContent = `المتبقي لك اليوم: ${10 - todayCount} إعلاناً نصياً`; if(typeof showDashboard === 'function' && user) showDashboard(user.name, 10 - todayCount); }catch(e){} }
 function isTrialUsed(){ return localStorage.getItem('tajer_trialUsed') === 'yes'; }
@@ -126,7 +126,9 @@ function onGoogleLogin(res){
     else alert(d.error || 'فشل تسجيل الدخول - يرجى المحاولة مرة أخرى');
   }).catch(()=> alert('حدثت مشكلة في الاتصال - يرجى المحاولة مرة أخرى'));
 }
+// MONETAG - الأول In-Page Push - الرابع Popunder
 function showMonetagAd(){ if(window.showMonetag) window.showMonetag(); return new Promise(res=>setTimeout(res, 2000)); }
+function showMonetagPopunder(){ if(window.showMonetagPopunder) window.showMonetagPopunder(); else if(window.showMonetag) window.showMonetag(); return new Promise(res=>setTimeout(res, 2000)); }
 function getPayloadFromForm(){ const v = (id) => (el(id)?.value || '').trim(); return { product: v('product'), productFeatures: v('productFeatures'), country: v('country'), dialect: v('dialect'), city: v('city'), category: v('category'), price: v('price'), delivery: v('delivery'), pickupMethod: v('pickupMethod'), whatsapp: v('whatsapp'), lang: v('lang'), length: v('length'), platform: v('platform') || 'جميع المنصات', shopName: v('shopName'), offer: v('offer'), audience: v('audience') || 'الجميع', tone: v('tone') || 'حماسية', pageLink: v('pageLink'), hasImage: v('hasImage') || 'أرغب في وصف صورة', serviceLink: v('serviceLink'), }; }
 function validateRequired(payload){
   const checks = [
@@ -234,7 +236,7 @@ el('adForm')?.addEventListener('submit', async (e)=>{
   // FIX: لو مسجل - الغي وضع التجربة
   if(token && user) isTrialMode = false;
   if(isTrialMode){ if(isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); showLoginRequired(); return; } }
-  else { if(!token){ alert('يرجى تسجيل الدخول أولاً للمتابعة.'); openLoginModal(); return; } if(todayCount >= 10){ alert('لقد استهلكت حصتك اليومية. يمكنك المحاولة غداً.'); return; } if(todayCount === 0){ await showMonetagAd(); } else if(todayCount === 3){ await showMonetagAd(); } }
+  else { if(!token){ alert('يرجى تسجيل الدخول أولاً للمتابعة.'); openLoginModal(); return; } if(todayCount >= 10){ alert('لقد استهلكت حصتك اليومية. يمكنك المحاولة غداً.'); return; } if(todayCount === 0){ await showMonetagAd(); } else if(todayCount === 3){ await showMonetagPopunder(); } }
   const payload = getPayloadFromForm();
   if(!validateRequired(payload)) return;
   if(isRecreateMode){ const ok = confirm(`ستعيد إنشاء هذا الإعلان بصيغة جديدة - وسيتم خصم طلب واحد من حصتك - المتبقي لك: ${10 - todayCount} - هل أنت متأكد؟`); if(!ok) return; }
