@@ -12,16 +12,13 @@ function show(id, display='block'){ const e = el(id); if(e) e.style.display=disp
 function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); const t=el(id); if(t) t.classList.add('active'); window.scrollTo({top:0}); }
 function toggleMenu(){ const d=el('drawer'); if(d) d.classList.toggle('show'); if(d && d.classList.contains('show')) updateDrawerAuth(); }
 function toggleMenuOff(){ const d=el('drawer'); if(d) d.classList.remove('show'); }
-// NEW: إخفاء الـ 20 خانة وزر التوليد - وإظهار النتيجة مكانهم
 function hideFormForResult(){
   const f = el('adForm'); if(f) f.style.display='none';
   const r = el('result'); if(r) r.style.display='block';
 }
-// NEW: إرجاع الـ 20 خانة لمن يضغط إنشاء إعلان جديد
 function showFormForNewAd(){
   const f = el('adForm'); if(f) f.style.display='flex';
   hide('result');
-  // رجع زر التوليد / إعادة الإنشاء لوضعه الطبيعي
   if(isRecreateMode){ hide('createBtn'); show('recreateBtn'); } else { show('createBtn'); hide('recreateBtn'); }
 }
 function backFromCreate(){ if(isRecreateMode) cancelRecreate(); if(token && user){ showView('view-home'); refreshQuota(); return; } showView('view-landing'); window.scrollTo({top:0}); }
@@ -52,8 +49,8 @@ function goLanding(){ toggleMenuOff(); if(token && user){ showView('view-home');
 function goHome(){ toggleMenuOff(); if(!user && !token){ showView('view-landing'); return; } showView('view-home'); refreshQuota(); }
 function goCreateAd(){
   toggleMenuOff();
-  // NEW: كل مرة يدخل إنشاء جديد - رجع الـ 20 خانة
   showFormForNewAd();
+  checkFirstAdOfDay();
   if(!token && !isTrialMode && isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; }
   if(!token && !isTrialMode){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent='تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent='تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; }
   showView('view-create-ad');
@@ -84,7 +81,6 @@ document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeLogi
 el('loginModal')?.addEventListener('click', function(e){ if(e.target === this) closeLoginModal(); });
 function heroTry(){ const v = el('heroProduct')?.value || ''; if(v.trim() && el('product')) el('product').value = v.trim(); if(!token && isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; } showForm(); }
 function startTrial(){ if(isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; } isTrialMode = true; hide('tryArea'); if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; showForm(); }
-// FIX: مسجل - لا تظهر رسالة تجربة
 function showLoginRequired(){ if(token && user) return; hide('result'); hide('tryArea'); show('trialDoneBox'); openLoginModal(); showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function onGoogleLogin(res){
   try{ let payload = JSON.parse(atob(res.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pendingGoogle = { name: payload.name, email: payload.email, picture: payload.picture, pic: payload.picture }; }catch(e){}
@@ -126,7 +122,6 @@ function onGoogleLogin(res){
     else alert(d.error || 'فشل تسجيل الدخول - يرجى المحاولة مرة أخرى');
   }).catch(()=> alert('حدثت مشكلة في الاتصال - يرجى المحاولة مرة أخرى'));
 }
-// MONETAG - الأول In-Page Push - الرابع Popunder
 function showMonetagAd(){ if(window.showMonetag) window.showMonetag(); return new Promise(res=>setTimeout(res, 2000)); }
 function showMonetagPopunder(){ if(window.showMonetagPopunder) window.showMonetagPopunder(); else if(window.showMonetag) window.showMonetag(); return new Promise(res=>setTimeout(res, 2000)); }
 function getPayloadFromForm(){ const v = (id) => (el(id)?.value || '').trim(); return { product: v('product'), productFeatures: v('productFeatures'), country: v('country'), dialect: v('dialect'), city: v('city'), category: v('category'), price: v('price'), delivery: v('delivery'), pickupMethod: v('pickupMethod'), whatsapp: v('whatsapp'), lang: v('lang'), length: v('length'), platform: v('platform') || 'جميع المنصات', shopName: v('shopName'), offer: v('offer'), audience: v('audience') || 'الجميع', tone: v('tone') || 'حماسية', pageLink: v('pageLink'), hasImage: v('hasImage') || 'أرغب في وصف صورة', serviceLink: v('serviceLink'), }; }
@@ -233,7 +228,6 @@ function submitRecreate(){
 }
 el('adForm')?.addEventListener('submit', async (e)=>{
   e.preventDefault();
-  // FIX: لو مسجل - الغي وضع التجربة
   if(token && user) isTrialMode = false;
   if(isTrialMode){ if(isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); showLoginRequired(); return; } }
   else { if(!token){ alert('يرجى تسجيل الدخول أولاً للمتابعة.'); openLoginModal(); return; } if(todayCount >= 10){ alert('لقد استهلكت حصتك اليومية. يمكنك المحاولة غداً.'); return; } if(todayCount === 0){ await showMonetagAd(); } else if(todayCount === 3){ await showMonetagPopunder(); } }
@@ -243,7 +237,6 @@ el('adForm')?.addEventListener('submit', async (e)=>{
   const btn = isRecreateMode ? el('recreateBtn') : el('createBtn');
   const oldText = btn ? btn.textContent : '';
   if(btn){ btn.disabled = true; btn.textContent = 'جارٍ التوليد...'; }
-  // NEW: اخفي الـ 20 خانة وزر التوليد - واظهر النتيجة مكانهم مع جاري التوليد
   hideFormForResult();
   if(el('adText')) el('adText').value = '⏳ جارٍ توليد إعلانك... انتظر ثواني';
   if(el('imagePrompt')) el('imagePrompt').value = '';
@@ -255,7 +248,6 @@ el('adForm')?.addEventListener('submit', async (e)=>{
     const d = await r.json();
     if(btn){ btn.disabled = false; btn.textContent = oldText; }
     if(d.error){
-      // NEW: لو حصل خطأ - رجع الـ 20 خانة
       showFormForNewAd();
       alert(d.error); return;
     }
@@ -271,11 +263,16 @@ el('adForm')?.addEventListener('submit', async (e)=>{
       const newAd = { product: payload.product, adText: d.adText, text: d.adText, imagePrompt: d.imagePrompt, payload: payload, date: Date.now() };
       const local = getAds(); local.unshift(newAd); localStorage.setItem('myAds', JSON.stringify(local.slice(0,50)));
       await saveAdToCloud(newAd);
+      _adsCreatedCount++;
+      if(isRecreateMode){
+        loadAdsterra();
+      } else if(_adsCreatedCount % 2 === 0){
+        loadAdsterra();
+      }
       loadHistory(); refreshQuota(); cancelRecreate();
     }
   }catch(err){
     if(btn){ btn.disabled = false; btn.textContent = oldText; }
-    // NEW: لو فشل الاتصال - رجع الـ 20 خانة
     showFormForNewAd();
     alert('حدثت مشكلة في الاتصال - يرجى المحاولة مرة أخرى');
   }
@@ -283,7 +280,6 @@ el('adForm')?.addEventListener('submit', async (e)=>{
 function loadHistory(){
   const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]');
   if(!el('history')) return;
-  // FIX: لا تظهر إعلانات سابقة داخل صفحة إنشاء إعلان - تظهر بس في view-my-ads
   if(el('history')) el('history').style.display = 'none';
   if(el('history')) el('history').innerHTML = '';
   return;
@@ -334,3 +330,86 @@ if(token){
 updateAuthUI();
 if(token && user){ showView('view-home'); }
 tryAutoLogin();
+// ===== تقييم + ملاحظات 👎 -> ترسل لبريدك =====
+let _lastRatedAd = '';
+function rateAd(v, btn){
+  if(btn){
+    const row = btn.parentElement;
+    row.querySelectorAll('.rateBtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  try{ localStorage.setItem('tajer_last_rate', v); }catch(e){}
+  _lastRatedAd = (el('adText')?.value || el('detailText')?.textContent || currentAd?.adText || '').slice(0,500);
+  if(v === -1){
+    const fb = el('feedbackBox');
+    if(fb) fb.classList.add('show');
+    if(el('feedbackText')) el('feedbackText').value = '';
+    setTimeout(()=> el('feedbackText')?.focus(), 100);
+  } else {
+    try{
+      const all = JSON.parse(localStorage.getItem('tajer_feedbacks')||'[]');
+      all.unshift({ type:'like', ad:_lastRatedAd, date:new Date().toLocaleString(), product: el('product')?.value || currentAd?.product || '' });
+      localStorage.setItem('tajer_feedbacks', JSON.stringify(all.slice(0,50)));
+    }catch(e){}
+  }
+}
+function closeFeedback(){
+  const fb = el('feedbackBox');
+  if(fb) fb.classList.remove('show');
+}
+function submitFeedback(){
+  const note = (el('feedbackText')?.value || '').trim();
+  if(!note){ alert('اكتب ملاحظتك أولاً'); return; }
+  const product = el('product')?.value || currentAd?.product || '';
+  const adText = _lastRatedAd || '';
+  const body = `ملاحظة جديدة من Tajer AI\n\nالمنتج: ${product}\n\nليه ما عجبو الإعلان:\n${note}\n\n--- نص الإعلان ---\n${adText}\n\nالتاريخ: ${new Date().toLocaleString()}`;
+  try{
+    const all = JSON.parse(localStorage.getItem('tajer_feedbacks')||'[]');
+    all.unshift({ type:'dislike', note, ad:adText, product, date:new Date().toLocaleString() });
+    localStorage.setItem('tajer_feedbacks', JSON.stringify(all.slice(0,50)));
+  }catch(e){}
+  try{
+    fetch('/api/feedback', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ note, ad:adText, product, email:'mohelnaji0@gmail.com' }) }).catch(()=>{});
+  }catch(e){}
+  const subject = encodeURIComponent('ملاحظة 👎 - إعلان ما عجب العميل - Tajer AI');
+  const b = encodeURIComponent(body);
+  window.open(`mailto:mohelnaji0@gmail.com?subject=${subject}&body=${b}`, '_blank');
+  closeFeedback();
+  alert('شكراً ليك ❤️ - وصلت ملاحظتك - حنحسن الإعلان الجاي');
+}
+// ===== Adsterra Social Bar - النظام الجديد =====
+let _lastSocialTime = 0, _socialClosedUntil = 0, _socialLoaded = false, _adsCreatedCount = 0;
+let _todayStr = function(){ return new Date().toDateString(); };
+function _canShowSocial(){
+  if(Date.now() < _socialClosedUntil) return false;
+  if(Date.now() - _lastSocialTime < 60*1000) return false;
+  return true;
+}
+function loadAdsterra(){
+  if(!_canShowSocial()) return;
+  if(_socialLoaded) return;
+  _lastSocialTime = Date.now();
+  _socialLoaded = true;
+  const s=document.createElement('script');
+  s.setAttribute('data-cfasync','false');
+  s.src='https://bauval.org/14/f7bb06d45366cb88433539a59c476da0';
+  document.body.appendChild(s);
+}
+function checkFirstAdOfDay(){
+  try{
+    const lastDay = localStorage.getItem('tajer_first_ad_day');
+    const today = _todayStr();
+    if(lastDay !== today){
+      localStorage.setItem('tajer_first_ad_day', today);
+      loadAdsterra();
+    }
+  }catch(e){ loadAdsterra(); }
+}
+function onAdClosedByUser(){
+  _socialClosedUntil = Date.now()+5*60*1000;
+  _socialLoaded = false;
+}
+document.addEventListener('click', function(e){
+  const t=e.target.closest('[class*="close"], [id*="close"], [class*="Close"], [aria-label*="close" i], [aria-label*="Close"]');
+  if(t) onAdClosedByUser();
+});
