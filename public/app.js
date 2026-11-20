@@ -12,22 +12,29 @@ function show(id, display='block'){ const e = el(id); if(e) e.style.display=disp
 function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); const t=el(id); if(t) t.classList.add('active'); window.scrollTo({top:0}); }
 function toggleMenu(){ const d=el('drawer'); if(d) d.classList.toggle('show'); if(d && d.classList.contains('show')) updateDrawerAuth(); }
 function toggleMenuOff(){ const d=el('drawer'); if(d) d.classList.remove('show'); }
-// ===== جديد: زر الرجوع من إنشاء إعلان - يرجع للصفحة ما يودي للتسجيل =====
+// NEW: إخفاء الـ 20 خانة وزر التوليد - وإظهار النتيجة مكانهم
+function hideFormForResult(){
+  const f = el('adForm'); if(f) f.style.display='none';
+  const r = el('result'); if(r) r.style.display='block';
+}
+// NEW: إرجاع الـ 20 خانة لمن يضغط إنشاء إعلان جديد
+function showFormForNewAd(){
+  const f = el('adForm'); if(f) f.style.display='flex';
+  hide('result');
+  // رجع زر التوليد / إعادة الإنشاء لوضعه الطبيعي
+  if(isRecreateMode){ hide('createBtn'); show('recreateBtn'); } else { show('createBtn'); hide('recreateBtn'); }
+}
 function backFromCreate(){ if(isRecreateMode) cancelRecreate(); if(token && user){ showView('view-home'); refreshQuota(); return; } showView('view-landing'); window.scrollTo({top:0}); }
-// ===== جديد: تحديث القائمة حسب حالة الدخول =====
 function updateDrawerAuth(){
   const loginB = el('sideLoginBtn'); const logoutB = el('sideLogoutBtn'); const editB = el('editProfileBtn');
   if(token && user){ if(loginB) loginB.style.display='none'; if(logoutB) logoutB.style.display='block'; if(editB) editB.style.display='block'; }
   else { if(loginB) loginB.style.display='block'; if(logoutB) logoutB.style.display='none'; if(editB) editB.style.display='none'; }
 }
-// ===== جديد: حفظ المستخدمين المعروفين =====
 function getKnownUsers(){ try{ return JSON.parse(localStorage.getItem('tajer_known_users')||'{}'); }catch(e){ return {}; } }
 function saveKnownUser(u){ if(!u || !u.email) return; const all=getKnownUsers(); all[u.email]={ name:u.name, email:u.email, pic:u.pic||u.picture||'', picture:u.picture||u.pic||'' }; localStorage.setItem('tajer_known_users', JSON.stringify(all)); }
-// ===== جديد: تعديل الملف الشخصي =====
 function openEditProfile(){ toggleMenuOff(); if(!token || !user){ openLoginModal(); return; } if(el('editName')) el('editName').value=user.name||''; if(el('editEmail')) el('editEmail').value=user.email||''; if(el('editAvatar')) el('editAvatar').src=user.pic||user.picture||''; showView('view-edit-profile'); }
 function previewEditPic(e){ let f=e.target.files[0]; if(!f) return; let rd=new FileReader(); rd.onload=()=>{ if(el('editAvatar')) el('editAvatar').src=rd.result; }; rd.readAsDataURL(f); }
 function saveProfileEdit(){ let newName=el('editName')?.value.trim(); if(!newName){ alert('يرجى كتابة اسمك'); return; } let newPic=el('editAvatar')?.src||user.pic; user.name=newName; user.pic=newPic; user.picture=newPic; localStorage.setItem('tajer_user', JSON.stringify(user)); saveKnownUser(user); try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user:user, token:token })); }catch(e){} updateHeader(); updateAuthUI(); alert('تم حفظ التعديل ✅'); showView('view-home'); }
-// ===== تعديل: الصفحة الأولى للزائر فقط - المسجل يرى الرئيسية =====
 function updateAuthUI(){
   const bar = el('stickyBar');
   if(token && user){
@@ -43,9 +50,15 @@ function updateAuthUI(){
 }
 function goLanding(){ toggleMenuOff(); if(token && user){ showView('view-home'); refreshQuota(); return; } showView('view-landing'); }
 function goHome(){ toggleMenuOff(); if(!user && !token){ showView('view-landing'); return; } showView('view-home'); refreshQuota(); }
-function goCreateAd(){ toggleMenuOff(); if(!token && !isTrialMode && isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; } if(!token && !isTrialMode){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent='تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent='تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; } showView('view-create-ad'); }
+function goCreateAd(){
+  toggleMenuOff();
+  // NEW: كل مرة يدخل إنشاء جديد - رجع الـ 20 خانة
+  showFormForNewAd();
+  if(!token && !isTrialMode && isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; }
+  if(!token && !isTrialMode){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent='تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent='تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; }
+  showView('view-create-ad');
+}
 async function goMyAds(){ toggleMenuOff(); if(!token){ openLoginModal(); return; } showView('view-my-ads'); await renderMyAds(); }
-// ===== تعديل: تسجيل الخروج يحفظ الدخول التلقائي + يرجع زائر =====
 function logout(){
   if(user && token){ try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){} }
   token=''; user=null;
@@ -57,7 +70,6 @@ function logout(){
 function showDashboard(name, remaining){ const w=el('welcomeText'); if(w) w.textContent='مرحباً بك يا '+name+' 👋'; const q=el('quotaText'); if(q) q.textContent='🔢 المتبقي لك '+remaining+' إعلان من 10 اليوم'; const q2=el('quota'); if(q2 && token) q2.textContent='المتبقي لك '+remaining+' إعلان'; updateHeader(); }
 function updateHeader(){ if(!user) return; const b=el('loginBtnTop'); if(b) b.style.display='none'; const av=el('headerAvatar'); if(av){ av.src=user.pic||user.picture||('https://ui-avatars.com/api/?name='+encodeURIComponent(user.name)); av.style.display='block'; } const da=el('drawerAvatar'); if(da) da.src=av?av.src:''; const dn=el('drawerName'); if(dn) dn.textContent=user.name; const de=el('drawerEmail'); if(de) de.textContent=user.email||''; const w=el('welcomeText'); if(w) w.textContent='مرحباً بك يا '+user.name+' 👋'; }
 function previewPic(e){ let f=e.target.files[0]; if(!f) return; let rd=new FileReader(); rd.onload=()=>{ if(el('accAvatar')) el('accAvatar').src=rd.result; if(pendingGoogle) pendingGoogle.pic=rd.result; }; rd.readAsDataURL(f); }
-// ===== تعديل: إنشاء الحساب يحفظ الدخول التلقائي =====
 function finishCreateAccount(){ let name=el('accName')?.value.trim(); if(!name){ alert('يرجى كتابة اسمك'); return; } if(pendingGoogle){ user={...pendingGoogle, name}; pendingGoogle=null; } else if(user){ user.name=name; } else { alert('حدث خطأ - يرجى تسجيل الدخول مرة أخرى'); return; } localStorage.setItem('tajer_user', JSON.stringify(user)); saveKnownUser(user); if(token){ try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){} } updateHeader(); updateAuthUI(); showView('view-home'); refreshQuota(); }
 function showForm(){ var heroVal = el('heroProduct') ? el('heroProduct').value : ''; goCreateAd(); var p = el('product'); if(p && heroVal && !p.value){ p.value = heroVal; } if(!token && !isTrialUsed()){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; } }
 function hideForm(){ if(token) showView('view-home'); else showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -72,7 +84,8 @@ document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeLogi
 el('loginModal')?.addEventListener('click', function(e){ if(e.target === this) closeLoginModal(); });
 function heroTry(){ const v = el('heroProduct')?.value || ''; if(v.trim() && el('product')) el('product').value = v.trim(); if(!token && isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; } showForm(); }
 function startTrial(){ if(isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); openLoginModal(); return; } isTrialMode = true; hide('tryArea'); if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; showForm(); }
-function showLoginRequired(){ hide('result'); hide('tryArea'); show('trialDoneBox'); openLoginModal(); showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+// FIX: مسجل - لا تظهر رسالة تجربة
+function showLoginRequired(){ if(token && user) return; hide('result'); hide('tryArea'); show('trialDoneBox'); openLoginModal(); showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function onGoogleLogin(res){
   try{ let payload = JSON.parse(atob(res.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pendingGoogle = { name: payload.name, email: payload.email, picture: payload.picture, pic: payload.picture }; }catch(e){}
   fetch('/api/auth/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: res.credential }) })
@@ -91,14 +104,12 @@ function onGoogleLogin(res){
         alert('تم تسجيل دخولك بنجاح ✅');
         return;
       }
-      // لو مسجل قبل كده بنفس الإيميل - وديهو الرئيسية طوالي - ما توديهو فورم إنشاء حساب
       const knownBefore = getKnownUsers()[d.user.email];
       user = d.user; localStorage.setItem('tajer_user', JSON.stringify(d.user));
       saveKnownUser(user);
       try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){}
       isTrialMode = false; closeLoginModal(); hide('loginRequiredBox'); hide('tryArea'); hide('trialDoneBox');
       if(knownBefore && knownBefore.name){
-        // استرجع الاسم والصورة المحفوظة لو المستخدم عدّلهم قبل كده
         if(knownBefore.name) user.name = knownBefore.name;
         if(knownBefore.pic) { user.pic = knownBefore.pic; user.picture = knownBefore.pic; }
         localStorage.setItem('tajer_user', JSON.stringify(user));
@@ -220,6 +231,8 @@ function submitRecreate(){
 }
 el('adForm')?.addEventListener('submit', async (e)=>{
   e.preventDefault();
+  // FIX: لو مسجل - الغي وضع التجربة
+  if(token && user) isTrialMode = false;
   if(isTrialMode){ if(isTrialUsed()){ alert('لقد استخدمت تجربتك المجانية - سجّل الآن للمتابعة مجاناً'); showLoginRequired(); return; } }
   else { if(!token){ alert('يرجى تسجيل الدخول أولاً للمتابعة.'); openLoginModal(); return; } if(todayCount >= 10){ alert('لقد استهلكت حصتك اليومية. يمكنك المحاولة غداً.'); return; } if(todayCount === 0){ await showMonetagAd(); } else if(todayCount === 3){ await showMonetagAd(); } }
   const payload = getPayloadFromForm();
@@ -228,13 +241,22 @@ el('adForm')?.addEventListener('submit', async (e)=>{
   const btn = isRecreateMode ? el('recreateBtn') : el('createBtn');
   const oldText = btn ? btn.textContent : '';
   if(btn){ btn.disabled = true; btn.textContent = 'جارٍ التوليد...'; }
+  // NEW: اخفي الـ 20 خانة وزر التوليد - واظهر النتيجة مكانهم مع جاري التوليد
+  hideFormForResult();
+  if(el('adText')) el('adText').value = '⏳ جارٍ توليد إعلانك... انتظر ثواني';
+  if(el('imagePrompt')) el('imagePrompt').value = '';
+  el('result')?.scrollIntoView({ behavior:'smooth' });
   const endpoint = isTrialMode ? '/api/generate-trial' : '/api/generate';
   const headers = { 'Content-Type': 'application/json' }; if(!isTrialMode) headers.Authorization = 'Bearer '+token;
   try{
     const r = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(payload) });
     const d = await r.json();
     if(btn){ btn.disabled = false; btn.textContent = oldText; }
-    if(d.error){ alert(d.error); return; }
+    if(d.error){
+      // NEW: لو حصل خطأ - رجع الـ 20 خانة
+      showFormForNewAd();
+      alert(d.error); return;
+    }
     show('result');
     if(el('adText')) el('adText').value = d.adText;
     if(el('imagePrompt')) el('imagePrompt').value = d.imagePrompt;
@@ -249,16 +271,20 @@ el('adForm')?.addEventListener('submit', async (e)=>{
       await saveAdToCloud(newAd);
       loadHistory(); refreshQuota(); cancelRecreate();
     }
-  }catch(err){ if(btn){ btn.disabled = false; btn.textContent = oldText; } alert('حدثت مشكلة في الاتصال - يرجى المحاولة مرة أخرى'); }
+  }catch(err){
+    if(btn){ btn.disabled = false; btn.textContent = oldText; }
+    // NEW: لو فشل الاتصال - رجع الـ 20 خانة
+    showFormForNewAd();
+    alert('حدثت مشكلة في الاتصال - يرجى المحاولة مرة أخرى');
+  }
 });
 function loadHistory(){
   const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]');
   if(!el('history')) return;
-  if(hist.length === 0){ el('history').innerHTML = ''; return; }
-  el('history').innerHTML = '<h3 style="margin:18px 0 8px">📜 إعلاناتك السابقة</h3>' + hist.map((h,i)=>{
-    const label = h.isRecreate ? '🔁 إعادة صياغة' : '✨ جديد';
-    return `<div class="card" style="text-align:right"><small>${h.date} - ${label}</small><p>${(h.adText||'').slice(0,120)}...</p><div style="display:flex;gap:8px"><button onclick="showOld(${i})" style="flex:1">عرض + نسخ</button><button onclick="startRecreate(${i})" style="flex:1;background:#7c3aed">🔁 إعادة إنشاء بصيغة أخرى</button></div></div>`;
-  }).join('');
+  // FIX: لا تظهر إعلانات سابقة داخل صفحة إنشاء إعلان - تظهر بس في view-my-ads
+  if(el('history')) el('history').style.display = 'none';
+  if(el('history')) el('history').innerHTML = '';
+  return;
 }
 function showOld(i){ const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]'); const h = hist[i]; if(!h) return; show('result'); if(el('adText')) el('adText').value = h.adText; if(el('imagePrompt')) el('imagePrompt').value = h.imagePrompt; el('result')?.scrollIntoView({ behavior:'smooth' }); }
 function copyText(id){ const elm = el(id); if(!elm) return; let txt = elm.value || elm.textContent; if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=> alert('تم النسخ بنجاح ✅ - يمكنك لصقه في أي مكان')); } else { elm.select(); document.execCommand('copy'); alert('تم النسخ بنجاح ✅ - يمكنك لصقه في أي مكان'); } }
