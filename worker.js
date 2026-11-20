@@ -184,7 +184,7 @@ export default {
     if(request.method === 'OPTIONS') return new Response(null, { headers: cors });
     const json = (obj, status=200) => Response.json(obj, { status, headers: cors });
     if(url.pathname === '/api/config' && request.method === 'GET'){
-      return json({ googleClientId: env.GOOGLE_CLIENT_ID || '', monetagZoneId: env.MONETAG_ZONE_ID || '' });
+      return json({ googleClientId: env.GOOGLE_CLIENT_ID || '', monetagZoneId: env.MONETAG_ZONE_ID || '', monetagPopunderZoneId: env.MONETAG_POPUNDER_ZONE_ID || '' });
     }
     if(url.pathname === '/api/auth/google' && request.method === 'POST'){
       try{
