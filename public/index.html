@@ -12,7 +12,6 @@ header{position:sticky;top:0;z-index:50;background:#0f1226;display:flex;align-it
 header b{font-size:18px} header b span{color:#a78bfa}
 #loginBtnTop{background:#fff;color:#111;border:none;padding:7px 14px;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer}
 #menuBtnTop{background:#222;color:#fff;border:none;padding:7px 12px;border-radius:10px;font-size:18px;cursor:pointer}
-/* ===== تعديل: صورة الملف الشخصي - صغيرة بحجم الشعار - ثابتة ===== */
 .avatar{width:32px !important;height:32px !important;min-height:32px !important;border-radius:50% !important;object-fit:cover !important;background:#333;flex-shrink:0}
 #headerAvatar{width:32px !important;height:32px !important;min-height:32px !important;aspect-ratio:1/1 !important}
 .avatarBig{width:90px;height:90px;border-radius:50%;object-fit:cover;background:#333;margin:10px auto;display:block}
@@ -58,16 +57,16 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 <body>
 <header>
 <div style="display:flex;align-items:center;gap:7px"><div class="logoCircle"><img src="/images/logo.png" alt="Tajer AI"></div><b>Tajer <span>AI</span></b></div>
-<!-- تعديل: الصورة يمين القائمة - مش شمالها - وفي RTL الترتيب ده بيخليها يمين -->
 <div style="display:flex;align-items:center;gap:8px"><img id="headerAvatar" class="avatar" style="display:none"><button id="menuBtnTop" onclick="toggleMenu()">☰</button><button id="loginBtnTop" onclick="openLoginModal()">تسجيل الدخول</button></div>
 </header>
 <div id="drawer" onclick="if(event.target.id=='drawer') toggleMenu()"><div id="drawerBox">
-<div style="text-align:center"><img id="drawerAvatar" class="avatarBig" style="width:60px;height:60px"><b id="drawerName"></b><p id="drawerEmail" style="font-size:12px;color:#94a3b8"></p></div>
+<div style="text-align:center"><img id="drawerAvatar" class="avatarBig" style="width:60px;height:60px"><b id="drawerName"></b><p id="drawerEmail" style="font-size:12px;color:#94a3b8"></p><button id="editProfileBtn" onclick="openEditProfile()" style="display:none;background:#7c3aed">✏️ تعديل بيانات الملف الشخصي</button></div>
 <button onclick="goHome()">🏠 الرئيسية</button>
 <button onclick="goMyAds()">📋 إعلاناتي السابقة</button>
 <button onclick="window.open('https://wa.me/249969718544?text=مرحبا - أرغب في الاستفسار عن Tajer AI','_blank')">💬 تواصل معنا</button>
 <button onclick="window.open('https://wa.me/249969718544?text=مرحبا - أحتاج إلى الدعم في Tajer AI','_blank')">🛠️ الدعم</button>
-<button onclick="logout()">🚪 تسجيل الخروج</button>
+<button id="sideLoginBtn" onclick="toggleMenuOff();openLoginModal()" style="background:#22c55e">🔑 تسجيل الدخول</button>
+<button id="sideLogoutBtn" onclick="logout()" style="display:none">🚪 تسجيل الخروج</button>
 <button onclick="toggleMenu()" style="background:#333">✕ إغلاق القائمة</button>
 </div></div>
 <div id="view-landing" class="view active">
@@ -106,7 +105,7 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 </div>
 <div id="view-create-account" class="view"><section><button class="backBtn" onclick="goLanding()">← رجوع</button><div class="formWrap" style="text-align:center"><h2>إنشاء حسابك</h2><p class="sub">أكمل بياناتك للمتابعة</p><img id="accAvatar" class="avatarBig" src=""><label style="display:block;text-align:right;font-size:13px;font-weight:700">اسمك - يمكنك تغييره</label><input id="accName" class="input"><label style="display:block;text-align:right;font-size:13px;font-weight:700">البريد الإلكتروني</label><input id="accEmail" class="input" readonly style="color:#94a3b8"><label style="display:block;text-align:right;font-size:13px;font-weight:700">صورة الملف الشخصي - اختياري</label><input type="file" id="accPicInput" accept="image/*" class="input" onchange="previewPic(event)"><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="finishCreateAccount()">إنشاء حساب ✅</button><p style="font-size:12px;color:#94a3b8;margin-top:8px">إذا لم تضف صورة - سنستخدم صورة افتراضية</p></div></section></div>
 <div id="view-home" class="view"><section><button class="backBtn" onclick="goLanding()">← رجوع</button><h2 style="text-align:right" id="welcomeText">مرحباً بك 👋</h2><p id="quotaText" style="font-size:13px;color:#a5b4fc;margin:6px 0">🔢 المتبقي لك ... إعلان</p><p style="font-size:13px;color:#cbd5e1">هل أنت جاهز للبيع اليوم؟ أنشئ إعلانك الجديد خلال 30 ثانية، أو ارجع إلى إعلاناتك السابقة وانسخها وانشرها.</p><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="goCreateAd()">➕ إنشاء إعلان جديد</button><button class="bigBtn" style="background:#7c3aed;color:#fff" onclick="goMyAds()">📋 إعلاناتي السابقة ←</button></section></div>
-<div id="view-create-ad" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><div class="formWrap"><h3>إنشاء إعلان جديد</h3><p class="trial">تجربة مجانية - لمرة واحدة فقط - بدون تسجيل</p><div id="userInfo" style="text-align:center;font-size:13px;color:#a5b4fc"></div><div id="quota" style="text-align:center;font-size:12px;color:#94a3b8;margin:4px 0"></div>
+<div id="view-create-ad" class="view"><section><button class="backBtn" onclick="backFromCreate()">← رجوع</button><div class="formWrap"><h3>إنشاء إعلان جديد</h3><p class="trial">تجربة مجانية - لمرة واحدة فقط - بدون تسجيل</p><div id="userInfo" style="text-align:center;font-size:13px;color:#a5b4fc"></div><div id="quota" style="text-align:center;font-size:12px;color:#94a3b8;margin:4px 0"></div>
 <form id="adForm">
 <label>1. اسم المنتج / الخدمة / الموقع / التطبيق *</label><input id="product" placeholder="مثال: عطر عود ملكي">
 <label>2. وصف مختصر / مميزات المنتج *</label><textarea id="productFeatures" placeholder="مثال: ثبات لمدة 24 ساعة - علبة فاخرة"></textarea>
@@ -133,6 +132,7 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 </form>
 <div id="result" style="display:none"><textarea id="adText" readonly></textarea><div style="display:flex;gap:8px;margin:8px 0"><button class="copyBtn" onclick="copyText('adText')">📋 نسخ الإعلان</button><button class="copyBtn" style="background:#0ea5e9" onclick="copyText('imagePrompt')">🖼️ نسخ وصف الصورة</button></div><textarea id="imagePrompt" readonly style="min-height:80px"></textarea><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="goMyAds()">عرض في إعلاناتي ←</button></div>
 <div id="history"></div></div></section></div>
+<div id="view-edit-profile" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><div class="formWrap" style="text-align:center"><h2>تعديل بيانات الملف الشخصي</h2><p class="sub">عدّل اسمك أو صورتك ثم اضغط حفظ</p><img id="editAvatar" class="avatarBig" src=""><label style="display:block;text-align:right;font-size:13px;font-weight:700">اسمك</label><input id="editName" class="input"><label style="display:block;text-align:right;font-size:13px;font-weight:700">البريد الإلكتروني</label><input id="editEmail" class="input" readonly style="color:#94a3b8"><label style="display:block;text-align:right;font-size:13px;font-weight:700">صورة الملف الشخصي</label><input type="file" id="editPicInput" accept="image/*" class="input" onchange="previewEditPic(event)"><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="saveProfileEdit()">حفظ التعديل ✅</button></div></section></div>
 <div id="view-my-ads" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><h2 style="text-align:right">📋 إعلاناتي السابقة</h2><p class="sub">اضغط على اسم الإعلان لعرضه كاملاً</p><div id="myAdsList"></div></section></div>
 <div id="view-ad-detail" class="view"><section><button class="backBtn" onclick="goMyAds()">← رجوع</button><h2 id="detailTitle" style="text-align:right"></h2><div class="card" style="text-align:right"><p id="detailText" style="white-space:pre-wrap;text-align:right;font-size:14px;color:#fff"></p><p id="detailImagePrompt" style="font-size:12px;color:#94a3b8;margin-top:10px;white-space:pre-wrap"></p></div>
 <button class="bigBtn" style="background:#7c3aed;color:#fff" onclick="copyText('detailText')">📋 نسخ الإعلان</button>
@@ -148,4 +148,4 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 <div id="stickyBar" class="stickyBar"><b>جرّب تاجر AI مجاناً ✨</b><button onclick="showForm()">إنشاء إعلان - مجاناً</button></div>
 <script src="app.js"></script>
 </body>
-  </html>
+                    </html>
