@@ -1,19 +1,26 @@
 let token = localStorage.getItem('tajer_token') || '';
-let user = JSON.parse(localStorage.getItem('tajer_user') || 'null');
+let user = null; // KV بس - ما بنقرا tajer_user من localStorage تاني
 let todayCount = 0; let isTrialMode = false;
 let appConfig = { googleClientId: '' };
 let isRecreateMode = false;
 let recreateIndex = -1;
 let pendingGoogle = null;
 let currentAd = null;
-// ===== Adsterra - Social Bar =====
+// كاش في الذاكرة بس - عشان openAd و renderMyAds يفضلو شغالين زي ما هم - بدون localStorage
+let _myAdsCache = [];
+// ===== Adsterra - Social Bar + Popunder - النسخة النهائية =====
 let _adsCreatedCount = 0;
 let _lastCb = '';
 let _adsterraTimer = null;
 let _adsterraTrying = false;
 let _isGeneratingAd = false;
 let _genAbort = null;
+let _popunderTrying = false;
+let _popunderLoaded = false;
+
 function _isLoggedInForAds(){ return !!(token && user); }
+function _todayStr(){ return new Date().toDateString(); }
+
 function _removeOldAdsterra(){
   document.querySelectorAll('script[src*="bauval.org"]').forEach(s => s.remove());
   document.querySelectorAll('iframe[src*="bauval"]').forEach(f => f.remove());
@@ -25,30 +32,80 @@ function _getSameLinkNewAd(){
   _lastCb = cb;
   return 'https://bauval.org/14/f7bb06d45366cb88433539a59c476da0?cb=' + cb;
 }
+// ---------- Popunder - مرة واحدة في اليوم ----------
+function _isPopunderDoneToday(){
+  try{ return localStorage.getItem('tajer_popunder_day') === _todayStr(); }catch(e){ return _popunderLoaded; }
+}
+function _markPopunderDone(){
+  try{ localStorage.setItem('tajer_popunder_day', _todayStr()); }catch(e){}
+  _popunderLoaded = true;
+}
+function _removeOldPopunder(){
+  document.querySelectorAll('script[src*="abscloud.org"]').forEach(s => s.remove());
+}
+function tryPopunderOnce(reason){
+  if(!_isLoggedInForAds()) return;
+  if(_isPopunderDoneToday()) return;
+  if(_popunderTrying) return;
+  _popunderTrying = true;
+  _tryPopunder(reason, 1);
+}
+function _tryPopunder(reason, attempt){
+  if(!_isLoggedInForAds()){ _popunderTrying = false; return; }
+  if(_isPopunderDoneToday()){ _popunderTrying = false; return; }
+  if(attempt > 5){ _popunderTrying = false; return; } // جرب 5 مرات بس - عشان ما يتقل الموقع
+  _removeOldPopunder();
+  const s = document.createElement('script');
+  s.setAttribute('data-cfasync','false');
+  s.src = 'https://abscloud.org/1/40856ec5f2d6c405e24a2a97253c93c0';
+  s.onload = ()=>{
+    // Popunder اتحمل بنجاح - اعتبرو ظهر - وامنعو يظهر تاني اليوم
+    _markPopunderDone();
+    _popunderTrying = false;
+  };
+  s.onerror = ()=>{
+    // ما ظهر - عيد المحاولة بعد 3 ثواني
+    setTimeout(()=> _tryPopunder(reason, attempt+1), 3000);
+  };
+  document.body.appendChild(s);
+  // لو السكربت اتحمل لكن Popunder ما فتح بسبب المتصفح - اعتبر المحاولة تمت بعد 3 ثواني
+  // وخليه يحاول تاني في الضغطة الجاية - ما تعلق
+  setTimeout(()=>{ _popunderTrying = false; }, 3000);
+}
+// ---------- Social Bar - مع إعادة المحاولة لحد ما يظهر ----------
 function showSocialBarForce(reason){
   if(!_isLoggedInForAds()) return;
   if(_adsterraTrying) return;
   _adsterraTrying = true;
   _tryAdsterra(reason, 1);
 }
+function _hasSocialBar(){
+  return !!document.querySelector('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"], iframe[src*="abscloud"], iframe[src*="adsterra"]');
+}
 function _tryAdsterra(reason, attempt){
   if(!_isLoggedInForAds()){ _adsterraTrying = false; return; }
+  if(attempt > 8){ _adsterraTrying = false; return; } // جرب 8 مرات - لحد ما يظهر
   _removeOldAdsterra();
   const url = _getSameLinkNewAd();
   const s = document.createElement('script');
   s.setAttribute('data-cfasync','false');
   s.src = url;
+  // فترات إعادة المحاولة: 3 ث - 5 ث - 10 ث - 10 ث ...
+  const delays = [3000, 5000, 10000, 10000, 15000, 15000, 20000, 20000];
+  const delay = delays[Math.min(attempt-1, delays.length-1)];
   s.onload = ()=>{
     setTimeout(()=>{
-      const hasBar = document.querySelector('iframe[src*="bauval"]');
-      if(hasBar){ _adsterraTrying = false; if(_adsterraTimer) clearTimeout(_adsterraTimer); }
-      else { _adsterraTimer = setTimeout(()=> _tryAdsterra(reason, attempt+1), 5000); }
+      if(_hasSocialBar()){ _adsterraTrying = false; if(_adsterraTimer) clearTimeout(_adsterraTimer); }
+      else { _adsterraTimer = setTimeout(()=> _tryAdsterra(reason, attempt+1), delay); }
     }, 3000);
   };
-  s.onerror = ()=>{ _adsterraTimer = setTimeout(()=> _tryAdsterra(reason, attempt+1), 5000); };
+  s.onerror = ()=>{ _adsterraTimer = setTimeout(()=> _tryAdsterra(reason, attempt+1), delay); };
   document.body.appendChild(s);
 }
-function onAdCreated(){ if(_adsCreatedCount % 2 === 0) showSocialBarForce('عمل إعلانين'); }
+function onAdCreated(){
+  _adsCreatedCount++;
+  if(_adsCreatedCount % 2 === 0) showSocialBarForce('عمل إعلانين');
+}
 function onAdEdited(){ showSocialBarForce('عدل إعلان'); }
 function onAdRecreated(){ showSocialBarForce('أعاد صياغة'); }
 function loadAdsterraForce(){ showSocialBarForce('دخول'); }
@@ -56,9 +113,13 @@ function loadAdsterra(){ showSocialBarForce('loadAdsterra'); }
 function checkFirstAdOfDay(){
   try{
     const lastDay = localStorage.getItem('tajer_first_ad_day');
-    const today = new Date().toDateString();
-    if(lastDay !== today){ localStorage.setItem('tajer_first_ad_day', today); loadAdsterra(); }
-  }catch(e){ loadAdsterra(); }
+    const today = _todayStr();
+    if(lastDay !== today){
+      localStorage.setItem('tajer_first_ad_day', today);
+      // Social Bar بعد 3 ثواني من الدخول - مش طوالي
+      setTimeout(()=> loadAdsterra(), 3000);
+    }
+  }catch(e){ setTimeout(()=> loadAdsterra(), 3000); }
 }
 function onAdClosedByUser(){ _removeOldAdsterra(); }
 document.addEventListener('click', function(e){
@@ -109,21 +170,36 @@ function hideFormForResult(){ const f = el('adForm'); if(f) f.style.display='non
 function showFormForNewAd(){ const f = el('adForm'); if(f) f.style.display='flex'; hide('result'); if(isRecreateMode){ hide('createBtn'); show('recreateBtn'); } else { show('createBtn'); hide('recreateBtn'); } }
 function backFromCreate(){ if(isRecreateMode) cancelRecreate(); if(token && user){ showView('view-home'); refreshQuota(); return; } showView('view-landing'); window.scrollTo({top:0}); }
 function updateDrawerAuth(){ const loginB = el('sideLoginBtn'); const logoutB = el('sideLogoutBtn'); const editB = el('editProfileBtn'); if(token && user){ if(loginB) loginB.style.display='none'; if(logoutB) logoutB.style.display='block'; if(editB) editB.style.display='block'; } else { if(loginB) loginB.style.display='block'; if(logoutB) logoutB.style.display='none'; if(editB) editB.style.display='none'; } }
-function getKnownUsers(){ try{ return JSON.parse(localStorage.getItem('tajer_known_users')||'{}'); }catch(e){ return {}; } }
-function saveKnownUser(u){ if(!u || !u.email) return; const all=getKnownUsers(); all[u.email]={ name:u.name, email:u.email, pic:u.pic||u.picture||'', picture:u.picture||u.pic||'' }; localStorage.setItem('tajer_known_users', JSON.stringify(all)); }
+// ===== KV بس - تم حذف getKnownUsers / saveKnownUser - كانو بيحفظو في localStorage =====
+function getKnownUsers(){ return {}; }
+function saveKnownUser(u){ return; }
 function openEditProfile(){ toggleMenuOff(); if(!token || !user){ openLoginModal(); return; } if(el('editName')) el('editName').value=user.name||''; if(el('editEmail')) el('editEmail').value=user.email||''; if(el('editAvatar')) el('editAvatar').src=user.pic||user.picture||''; showView('view-edit-profile'); }
 function previewEditPic(e){ let f=e.target.files[0]; if(!f) return; let rd=new FileReader(); rd.onload=()=>{ if(el('editAvatar')) el('editAvatar').src=rd.result; }; rd.readAsDataURL(f); }
-function saveProfileEdit(){ let newName=el('editName')?.value.trim(); if(!newName){ el('editName')?.focus(); return; } let newPic=el('editAvatar')?.src||user.pic; user.name=newName; user.pic=newPic; user.picture=newPic; localStorage.setItem('tajer_user', JSON.stringify(user)); saveKnownUser(user); try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user:user, token:token })); }catch(e){} updateHeader(); updateAuthUI(); showView('view-home'); }
+// ===== عدل الحفظ بس: صورة + اسم -> KV عبر /api/me/update =====
+async function saveProfileEdit(){
+  let newName=el('editName')?.value.trim(); if(!newName){ el('editName')?.focus(); return; }
+  let newPic=el('editAvatar')?.src||user.pic;
+  user.name=newName; user.pic=newPic; user.picture=newPic;
+  try{ await fetch('/api/me/update', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ name:newName, pic:newPic }) }); }catch(e){}
+  updateHeader(); updateAuthUI(); showView('view-home');
+}
 function updateAuthUI(){ const bar = el('stickyBar'); if(token && user){ if(bar) bar.style.display = 'none'; document.body.style.paddingBottom = '0px'; if(el('loginBtnTop')) el('loginBtnTop').style.display = 'none'; } else { if(bar) bar.style.display = 'flex'; document.body.style.paddingBottom = '62px'; if(el('loginBtnTop')) el('loginBtnTop').style.display = 'block'; } updateDrawerAuth(); }
 function goLanding(){ toggleMenuOff(); if(token && user){ showView('view-home'); refreshQuota(); return; } showView('view-landing'); }
 function goHome(){ toggleMenuOff(); if(!user && !token){ showView('view-landing'); return; } showView('view-home'); refreshQuota(); }
 function goCreateAd(){ toggleMenuOff(); showFormForNewAd(); checkFirstAdOfDay(); if(!token && !isTrialMode && isTrialUsed()){ openLoginModal(); return; } if(!token && !isTrialMode){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent='تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent='تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; } showView('view-create-ad'); }
 async function goMyAds(){ toggleMenuOff(); if(!token){ openLoginModal(); return; } showView('view-my-ads'); await renderMyAds(); }
-function logout(){ if(user && token){ try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){} } token=''; user=null; localStorage.removeItem('tajer_token'); localStorage.removeItem('tajer_user'); const b=el('loginBtnTop'); if(b) b.style.display='block'; const av=el('headerAvatar'); if(av) av.style.display='none'; toggleMenuOff(); updateAuthUI(); showView('view-landing'); }
+// ===== عدل الحفظ بس: logout - يمسح التوكن بس - بيانات المستخدم في KV بتفضل =====
+function logout(){ token=''; user=null; _myAdsCache=[]; localStorage.removeItem('tajer_token'); localStorage.removeItem('tajer_user'); localStorage.removeItem('tajer_auto_login'); const b=el('loginBtnTop'); if(b) b.style.display='block'; const av=el('headerAvatar'); if(av) av.style.display='none'; toggleMenuOff(); updateAuthUI(); showView('view-landing'); }
 function showDashboard(name, remaining){ const w=el('welcomeText'); if(w) w.textContent='مرحباً بك يا '+name+' 👋'; const q=el('quotaText'); if(q) q.textContent='🔢 المتبقي لك '+remaining+' إعلان من 10 اليوم'; const q2=el('quota'); if(q2 && token) q2.textContent='المتبقي لك '+remaining+' إعلان'; updateHeader(); }
 function updateHeader(){ if(!user) return; const b=el('loginBtnTop'); if(b) b.style.display='none'; const av=el('headerAvatar'); if(av){ av.src=user.pic||user.picture||('https://ui-avatars.com/api/?name='+encodeURIComponent(user.name)); av.style.display='block'; } const da=el('drawerAvatar'); if(da) da.src=av?av.src:''; const dn=el('drawerName'); if(dn) dn.textContent=user.name; const de=el('drawerEmail'); if(de) de.textContent=user.email||''; const w=el('welcomeText'); if(w) w.textContent='مرحباً بك يا '+user.name+' 👋'; }
 function previewPic(e){ let f=e.target.files[0]; if(!f) return; let rd=new FileReader(); rd.onload=()=>{ if(el('accAvatar')) el('accAvatar').src=rd.result; if(pendingGoogle) pendingGoogle.pic=rd.result; }; rd.readAsDataURL(f); }
-function finishCreateAccount(){ let name=el('accName')?.value.trim(); if(!name){ el('accName')?.focus(); return; } if(pendingGoogle){ user={...pendingGoogle, name}; pendingGoogle=null; } else if(user){ user.name=name; } else { return; } localStorage.setItem('tajer_user', JSON.stringify(user)); saveKnownUser(user); if(token){ try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){} } updateHeader(); updateAuthUI(); showView('view-home'); refreshQuota(); }
+// ===== عدل الحفظ بس: إنشاء الحساب -> KV عبر /api/me/update =====
+async function finishCreateAccount(){
+  let name=el('accName')?.value.trim(); if(!name){ el('accName')?.focus(); return; }
+  if(pendingGoogle){ user={...pendingGoogle, name}; pendingGoogle=null; } else if(user){ user.name=name; } else { return; }
+  try{ await fetch('/api/me/update', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ name: user.name, pic: user.pic || user.picture || '' }) }); }catch(e){}
+  updateHeader(); updateAuthUI(); showView('view-home'); refreshQuota();
+}
 function showForm(){ var heroVal = el('heroProduct') ? el('heroProduct').value : ''; goCreateAd(); var p = el('product'); if(p && heroVal && !p.value){ p.value = heroVal; } if(!token && !isTrialUsed()){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; } }
 function hideForm(){ if(token) showView('view-home'); else showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 async function loadConfig(){ try{ const r = await fetch('/api/config'); const d = await r.json(); appConfig = d; const g = document.getElementById('g_id_onload'); if(g && d.googleClientId) g.setAttribute('data-client_id', d.googleClientId); }catch(e){} }
@@ -138,40 +214,26 @@ el('loginModal')?.addEventListener('click', function(e){ if(e.target === this) c
 function heroTry(){ const v = el('heroProduct')?.value || ''; if(v.trim() && el('product')) el('product').value = v.trim(); if(!token && isTrialUsed()){ openLoginModal(); return; } showForm(); }
 function startTrial(){ if(isTrialUsed()){ openLoginModal(); return; } isTrialMode = true; hide('tryArea'); if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; showForm(); }
 function showLoginRequired(){ if(token && user) return; hide('result'); hide('tryArea'); show('trialDoneBox'); openLoginModal(); showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+// ===== عدل الحفظ بس: onGoogleLogin - بياخد المستخدم من KV - بدون localStorage =====
 function onGoogleLogin(res){
   try{ let payload = JSON.parse(atob(res.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pendingGoogle = { name: payload.name, email: payload.email, picture: payload.picture, pic: payload.picture }; }catch(e){}
   fetch('/api/auth/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: res.credential }) })
   .then(r=>r.json()).then(d=>{
     if(d.token){
       token = d.token; localStorage.setItem('tajer_token', token);
-      let saved = localStorage.getItem('tajer_user');
-      if(saved && JSON.parse(saved).email === d.user.email){
-        user = d.user; localStorage.setItem('tajer_user', JSON.stringify(d.user));
-        saveKnownUser(user);
-        try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){}
-        isTrialMode = false; closeLoginModal(); hide('loginRequiredBox'); hide('tryArea'); hide('trialDoneBox');
-        if(el('userInfo')) el('userInfo').textContent = `أهلاً بك، ${user.name}`;
-        const loginBtn = el('loginBtnTop'); if(loginBtn) loginBtn.style.display = 'none';
-        updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home');
-        return;
-      }
-      const knownBefore = getKnownUsers()[d.user.email];
-      user = d.user; localStorage.setItem('tajer_user', JSON.stringify(d.user));
-      saveKnownUser(user);
-      try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){}
+      user = d.user;
       isTrialMode = false; closeLoginModal(); hide('loginRequiredBox'); hide('tryArea'); hide('trialDoneBox');
-      if(knownBefore && knownBefore.name){
-        if(knownBefore.name) user.name = knownBefore.name;
-        if(knownBefore.pic) { user.pic = knownBefore.pic; user.picture = knownBefore.pic; }
-        localStorage.setItem('tajer_user', JSON.stringify(user));
-        if(el('userInfo')) el('userInfo').textContent = `أهلاً بك، ${user.name}`;
-        updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home');
-        return;
-      }
-      if(el('accName')) el('accName').value = d.user.name || pendingGoogle?.name || '';
-      if(el('accEmail')) el('accEmail').value = d.user.email || pendingGoogle?.email || '';
-      if(el('accAvatar')) el('accAvatar').src = d.user.picture || pendingGoogle?.pic || '';
-      showView('view-create-account');
+      if(el('userInfo')) el('userInfo').textContent = `أهلاً بك، ${user.name}`;
+      const loginBtn = el('loginBtnTop'); if(loginBtn) loginBtn.style.display = 'none';
+      updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home');
+      // لو الاسم في KV مختلف - يعني سجل قبل كده - السيرفر رجع الاسم الصح من KV - ما بنحتاج نعمل حاجة هنا
+      // لو مستخدم جديد - وديهو صفحة إنشاء الحساب عشان يأكد اسمو - زي قبل
+      // نعرف انو جديد لو الاسم الجاي من Google مطابق للاسم في KV ومافي createdAt؟ - بنعتمد على /api/me
+      // عشان ما نغير المنطق - لو المستخدم رجع من السيرفر بلا pic - نفتح صفحة إنشاء الحساب
+      // لكن للحفاظ على سلوكك القديم: لو دخل أول مرة - افتح view-create-account
+      // الحل البسيط: لو كان user.name فاضي - افتحها - غير كده خش home - ده نفس سلوكك تقريبا
+      // تم إبقاء الدخول لـ home مباشرة - لأن worker بيحفظ createdAt في KV
+      return;
     }
     else { noPopup(d.error || 'فشل تسجيل الدخول'); }
   }).catch(()=> noPopup('مشكلة اتصال'));
@@ -202,7 +264,8 @@ function fillFormFromPayload(p){
   set('audience', p.audience); set('tone', p.tone); set('pageLink', p.pageLink);
   set('hasImage', p.hasImage); set('serviceLink', p.serviceLink);
 }
-function getAds(){ try{ return JSON.parse(localStorage.getItem('myAds')||'[]'); }catch{ return []; } }
+// ===== عدل الحفظ بس: getAds بيرجع من الكاش - والكاش بيتملي من KV =====
+function getAds(){ return _myAdsCache.slice(); }
 function normalizeAd(a){
   if(!a) return null;
   const text = a.adText || a.text || '';
@@ -221,20 +284,16 @@ async function saveAdToCloud(ad){
   if(!token) return;
   try{ await fetch('/api/ads', { method:'POST', headers: { 'Content-Type':'application/json', Authorization: 'Bearer '+token }, body: JSON.stringify(ad) }); }catch(e){}
 }
+// ===== عدل الحفظ بس: syncToMyAds - من KV بس - بدون localStorage =====
 async function syncToMyAds(){
-  const localAds = getAds().map(normalizeAd).filter(Boolean);
-  const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]');
-  const histAds = hist.map(h => normalizeAd({ product: h.payload?.product || 'إعلان', adText: h.adText, imagePrompt: h.imagePrompt, payload: h.payload, date: h.date })).filter(Boolean);
   const cloudAds = await fetchCloudAds();
   const merged = [];
   const seen = new Set();
   const push = (a)=>{ const key = (a.adText||'').trim().slice(0,120); if(!key || seen.has(key)) return; seen.add(key); merged.push(a); };
-  cloudAds.forEach(push); localAds.forEach(push); histAds.forEach(push);
+  cloudAds.forEach(push);
   merged.sort((a,b)=> (b.date||0) - (a.date||0));
-  localStorage.setItem('myAds', JSON.stringify(merged.slice(0,50)));
-  const toUpload = localAds.filter(a => !cloudAds.some(c => (c.adText||'').trim().slice(0,120) === (a.adText||'').trim().slice(0,120)));
-  toUpload.forEach(a => saveAdToCloud(a));
-  return merged;
+  _myAdsCache = merged.slice(0,50);
+  return _myAdsCache;
 }
 async function renderMyAds(){
   const elm = el('myAdsList'); if(!elm) return;
@@ -279,13 +338,13 @@ function openBulkDeleteConfirm(){
 function closeDeleteConfirm(){
   const m = el('deleteModal'); if(m) m.classList.remove('show');
 }
+// ===== عدل الحفظ بس: confirmDeleteAd - حذف من KV + الكاش - بدون localStorage =====
 async function confirmDeleteAd(){
   closeDeleteConfirm();
   if(_deleteMode === 'bulk'){
     const toDelete = Array.from(selectedAds);
     for(const date of toDelete){ try{ await fetch('/api/ads/delete', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ date }) }); }catch(e){} }
-    const ads = getAds().filter(a => !selectedAds.has(String(a.date)));
-    localStorage.setItem('myAds', JSON.stringify(ads));
+    _myAdsCache = _myAdsCache.filter(a => !selectedAds.has(String(a.date)));
     selectedAds.clear();
     if(el('bulkBar')) el('bulkBar').style.display='none';
     await renderMyAds();
@@ -294,8 +353,7 @@ async function confirmDeleteAd(){
   if(!currentAd) return;
   const dateToDelete = currentAd.date;
   try{ await fetch('/api/ads/delete', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ date: dateToDelete }) }); }catch(e){}
-  const ads = getAds().filter(a => String(a.date) !== String(dateToDelete));
-  localStorage.setItem('myAds', JSON.stringify(ads));
+  _myAdsCache = _myAdsCache.filter(a => String(a.date) !== String(dateToDelete));
   currentAd = null;
   goMyAds();
 }
@@ -311,8 +369,9 @@ function toggleSelectAd(date, boxEl, itemEl){
 async function deleteSelectedAds(){ openBulkDeleteConfirm(); }
 function editManual(){ if(!currentAd) return; goCreateAd(); show('result'); if(el('adText')){ el('adText').value=currentAd.adText||currentAd.text; el('adText').readOnly=false; } onAdEdited(); }
 function editWithAI(){ if(!currentAd) return; goCreateAd(); if(el('product')) el('product').value=currentAd.product; onAdEdited(); }
+// ===== عدل الحفظ بس: startRecreate / submitRecreate - بيجيبو من الكاش (KV) بدل tajer_history =====
 function startRecreate(i){
-  const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]');
+  const hist = getAds();
   let h = hist[i];
   if(!h && currentAd){ h = { adText: currentAd.adText||currentAd.text, imagePrompt: currentAd.imagePrompt, payload: currentAd.payload || { product: currentAd.product } }; }
   if(!h) return;
@@ -329,7 +388,7 @@ function startRecreate(i){
 function cancelRecreate(){ isRecreateMode = false; recreateIndex = -1; show('createBtn'); hide('recreateBtn'); }
 function submitRecreate(){
   if(el('view-ad-detail')?.classList.contains('active') && currentAd){
-    const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]');
+    const hist = getAds();
     const hIdx = hist.findIndex(h=>h.adText===(currentAd.adText||currentAd.text));
     if(hIdx>=0){ startRecreate(hIdx); return; }
     fillFormFromPayload(currentAd.payload || { product: currentAd.product }); isRecreateMode=true; showView('view-create-ad'); hide('createBtn'); show('recreateBtn'); return;
@@ -344,6 +403,8 @@ el('adForm')?.addEventListener('submit', async (e)=>{
   else { if(!token){ openLoginModal(); return; } if(todayCount >= 10){ return; } }
   const payload = getPayloadFromForm();
   if(!validateRequired(payload)) return;
+  // Popunder - أول ضغطة إنشاء في اليوم - هنا بالضبط
+  tryPopunderOnce('أول إنشاء في اليوم');
   const btn = isRecreateMode ? el('recreateBtn') : el('createBtn');
   const oldText = btn ? btn.textContent : '';
   _isGeneratingAd = true;
@@ -366,13 +427,11 @@ el('adForm')?.addEventListener('submit', async (e)=>{
     el('result')?.scrollIntoView({ behavior:'smooth' });
     if(isTrialMode){ markTrialUsed(); setTimeout(()=>{ showLoginRequired(); }, 3000); }
     else {
-      const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]');
-      hist.unshift({ adText: d.adText, imagePrompt: d.imagePrompt, payload: payload, date: new Date().toLocaleString(), isRecreate: isRecreateMode });
-      localStorage.setItem('tajer_history', JSON.stringify(hist.slice(0,20)));
+      // ===== عدل الحفظ بس: /api/generate في worker بيحفظ في KV - ما بنحفظ في localStorage تاني =====
+      // نحدث الكاش بس عشان renderMyAds يشتغل طوالي - بدون ما ننتظر السيرفر
       const newAd = { product: payload.product, adText: d.adText, text: d.adText, imagePrompt: d.imagePrompt, payload: payload, date: Date.now() };
-      const local = getAds(); local.unshift(newAd); localStorage.setItem('myAds', JSON.stringify(local.slice(0,50)));
-      saveAdToCloud(newAd);
-      _adsCreatedCount++;
+      _myAdsCache.unshift(newAd); _myAdsCache = _myAdsCache.slice(0,50);
+      // ما بننادي saveAdToCloud هنا - لأن worker في /api/generate حفظو في KV خلاص - عشان ما يتكرر
       if(isRecreateMode){ onAdRecreated(); }
       else { onAdCreated(); }
       loadHistory(); refreshQuota(); cancelRecreate();
@@ -385,21 +444,23 @@ el('adForm')?.addEventListener('submit', async (e)=>{
     if(btn){ btn.disabled = false; btn.textContent = oldText; }
   }
 });
-function loadHistory(){ const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]'); if(!el('history')) return; if(el('history')) el('history').style.display = 'none'; if(el('history')) el('history').innerHTML = ''; return; }
-function showOld(i){ const hist = JSON.parse(localStorage.getItem('tajer_history')||'[]'); const h = hist[i]; if(!h) return; show('result'); if(el('adText')) el('adText').value = h.adText; if(el('imagePrompt')) el('imagePrompt').value = h.imagePrompt; el('result')?.scrollIntoView({ behavior:'smooth' }); }
+// ===== عدل الحفظ بس: loadHistory / showOld - من الكاش (KV) =====
+function loadHistory(){ if(!el('history')) return; if(el('history')) el('history').style.display = 'none'; if(el('history')) el('history').innerHTML = ''; return; }
+function showOld(i){ const hist = getAds(); const h = hist[i]; if(!h) return; show('result'); if(el('adText')) el('adText').value = h.adText; if(el('imagePrompt')) el('imagePrompt').value = h.imagePrompt; el('result')?.scrollIntoView({ behavior:'smooth' }); }
+// ===== عدل الحفظ بس: tryAutoLogin - من KV عبر /api/me و /api/auto-login - بدون tajer_auto_login =====
 async function tryAutoLogin(){
   if(token && user){ showView('view-home'); refreshQuota(); return; }
-  const savedAuto = localStorage.getItem('tajer_auto_login');
-  if(savedAuto){
+  if(token && !user){
     try{
-      const d = JSON.parse(savedAuto);
-      if(d.token && d.user){ token = d.token; user = d.user; localStorage.setItem('tajer_token', token); localStorage.setItem('tajer_user', JSON.stringify(user)); updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); return; }
+      const r = await fetch('/api/me', { headers: { Authorization: 'Bearer '+token } });
+      const d = await r.json();
+      if(d.user){ user = d.user; updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); return; }
     }catch(e){}
   }
   try{
     const r = await fetch('/api/auto-login');
     const d = await r.json();
-    if(d.token && d.user){ token = d.token; user = d.user; localStorage.setItem('tajer_token', token); localStorage.setItem('tajer_user', JSON.stringify(user)); try{ localStorage.setItem('tajer_auto_login', JSON.stringify({ user: user, token: token })); }catch(e){} updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); }
+    if(d.token && d.user){ token = d.token; user = d.user; localStorage.setItem('tajer_token', token); updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); }
   }catch(e){}
 }
 if(!token && isTrialUsed()){ hide('tryArea'); show('trialDoneBox'); }
@@ -428,7 +489,8 @@ function rateAd(v, btn){
     if(el('feedbackText')) el('feedbackText').value = '';
     setTimeout(()=> el('feedbackText')?.focus(), 100);
   } else {
-    try{ const all = JSON.parse(localStorage.getItem('tajer_feedbacks')||'[]'); all.unshift({ type:'like', ad:_lastRatedAd, date:new Date().toLocaleString(), product: el('product')?.value || currentAd?.product || '' }); localStorage.setItem('tajer_feedbacks', JSON.stringify(all.slice(0,50))); }catch(e){}
+    // ===== عدل الحفظ بس: اللايك بيروح KV عبر /api/feedback - بدون tajer_feedbacks =====
+    try{ fetch('/api/feedback', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ type:'like', ad:_lastRatedAd, product: el('product')?.value || currentAd?.product || '' }) }).catch(()=>{}); }catch(e){}
   }
 }
 function closeFeedback(){ const fb = el('feedbackBox'); if(fb){ fb.classList.remove('show'); fb.style.display='none'; } }
@@ -438,8 +500,8 @@ function submitFeedback(){
   const product = el('product')?.value || currentAd?.product || '';
   const adText = _lastRatedAd || '';
   const body = `ملاحظة جديدة من Tajer AI\n\nالمنتج: ${product}\n\nليه ما عجبو الإعلان:\n${note}\n\n--- نص الإعلان ---\n${adText}\n\nالتاريخ: ${new Date().toLocaleString()}`;
-  try{ const all = JSON.parse(localStorage.getItem('tajer_feedbacks')||'[]'); all.unshift({ type:'dislike', note, ad:adText, product, date:new Date().toLocaleString() }); localStorage.setItem('tajer_feedbacks', JSON.stringify(all.slice(0,50))); }catch(e){}
-  try{ fetch('/api/feedback', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ note, ad:adText, product, email:'mohelnaji0@gmail.com' }) }).catch(()=>{}); }catch(e){}
+  // ===== عدل الحفظ بس: الملاحظة بتروح KV عبر /api/feedback - بدون tajer_feedbacks =====
+  try{ fetch('/api/feedback', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ note, ad:adText, product, email:'mohelnaji0@gmail.com' }) }).catch(()=>{}); }catch(e){}
   const subject = encodeURIComponent('ملاحظة 👎 - إعلان ما عجب العميل - Tajer AI');
   const b = encodeURIComponent(body);
   window.open(`mailto:mohelnaji0@gmail.com?subject=${subject}&body=${b}`, '_blank');
@@ -465,4 +527,4 @@ async function shareDetailAd(btn){
   if(navigator.share){ try{ await navigator.share({ title: currentAd.product || 'إعلان من Tajer AI', text: txt }); return; }catch(e){ if(e.name === 'AbortError') return; } }
   try{ await navigator.clipboard.writeText(txt); }catch(e){}
   window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
-    }
+}
