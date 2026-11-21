@@ -1,97 +1,124 @@
 let token = localStorage.getItem('tajer_token') || '';
-let user = null; // KV بس - ما بنقرا tajer_user من localStorage تاني
+let user = null;
 let todayCount = 0; let isTrialMode = false;
 let appConfig = { googleClientId: '' };
 let isRecreateMode = false;
 let recreateIndex = -1;
 let pendingGoogle = null;
 let currentAd = null;
-// كاش في الذاكرة بس - عشان openAd و renderMyAds يفضلو شغالين زي ما هم - بدون localStorage
 let _myAdsCache = [];
 // ===== Adsterra - Social Bar بس - Popunder اتشال نهائي =====
-let _adsCreatedCount = 0;
-let _lastCb = '';
-let _adsterraTimer = null;
-let _adsterraTrying = false;
+// النظام: يبدأ بعد دخول الموقع أول مرة في اليوم بـ 3 ث - يقعد 10-30 ث - يختفي - بعد 60 ث يظهر جديد - لو قفلو يقيف 5 دقائق - حد اليوم 4 اعلانات مختلفة
+let _socialBarTimer = null;
+let _socialBarHideTimer = null;
+let _socialBarShowing = false;
+let _socialBarStartedToday = false;
 let _isGeneratingAd = false;
 let _genAbort = null;
 
 function _isLoggedInForAds(){ return !!(token && user); }
 function _todayStr(){ return new Date().toDateString(); }
 
-function _removeOldAdsterra(){
+// --- الحد اليومي: 4 اعلانات مختلفة ---
+function _getSocialDaily(){
+  try{
+    const raw = localStorage.getItem('tajer_social_daily');
+    const today = _todayStr();
+    if(!raw) return { day: today, count: 0 };
+    const d = JSON.parse(raw);
+    if(d.day !== today) return { day: today, count: 0 };
+    return d;
+  }catch(e){ return { day: _todayStr(), count: 0 }; }
+}
+function _setSocialDaily(count){
+  try{ localStorage.setItem('tajer_social_daily', JSON.stringify({ day: _todayStr(), count })); }catch(e){}
+}
+function _canShowDaily(){ return _getSocialDaily().count < 4; }
+function _incSocialDaily(){ const d = _getSocialDaily(); _setSocialDaily(d.count + 1); }
+
+// --- لو المستخدم قفل الاعلان - استنى 5 دقائق احتراما له ---
+function _canShowNow(){
+  try{
+    const closedAt = parseInt(localStorage.getItem('tajer_social_closed_at') || '0');
+    if(Date.now() - closedAt < 5 * 60 * 1000) return false;
+  }catch(e){}
+  return true;
+}
+
+// --- امسح القديم وحمّل سكربت جديد - عشان يجيب اعلان جديد مختلف ---
+function _loadNewSocialBar(){
   document.querySelectorAll('script[src*="bauval.org"]').forEach(s => s.remove());
-  document.querySelectorAll('iframe[src*="bauval"]').forEach(f => f.remove());
-  document.querySelectorAll('[id*="bauval"], [class*="bauval"]').forEach(e => e.remove());
-}
-function _getSameLinkNewAd(){
-  let cb;
-  do{ cb = Date.now() + '_' + Math.floor(Math.random()*1000000000); }while(cb === _lastCb);
-  _lastCb = cb;
-  return 'https://bauval.org/14/f7bb06d45366cb88433539a59c476da0?cb=' + cb;
-}
-// ---------- Social Bar بس - بدون Popunder ----------
-// Popunder اتشال - عشان كان بيفتح صفحة جديدة وبيتوه المستخدم وبيجيب اعلانات نصب
-function showSocialBarForce(reason){
-  if(!_isLoggedInForAds()) return;
-  if(_adsterraTrying) return;
-  _adsterraTrying = true;
-  _tryAdsterra(reason, 1);
-}
-function _hasSocialBar(){
-  // Social Bar بتاع Adsterra بيجي iframe او div فيه bauval
-  return !!document.querySelector('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"]');
-}
-function _tryAdsterra(reason, attempt){
-  if(!_isLoggedInForAds()){ _adsterraTrying = false; return; }
-  if(attempt > 8){ _adsterraTrying = false; return; }
-  // فك التعليق بعد 25 ثانية - عشان لو فشل ما يعلق للأبد
-  setTimeout(()=>{ _adsterraTrying = false; }, 25000);
-  _removeOldAdsterra();
-  const url = _getSameLinkNewAd();
+  document.querySelectorAll('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"]').forEach(e => e.remove());
   const s = document.createElement('script');
   s.setAttribute('data-cfasync','false');
-  s.src = url;
-  const delays = [3000, 5000, 10000, 10000, 15000, 15000, 20000, 20000];
-  const delay = delays[Math.min(attempt-1, delays.length-1)];
-  s.onload = ()=>{
-    setTimeout(()=>{
-      if(_hasSocialBar()){ _adsterraTrying = false; if(_adsterraTimer) clearTimeout(_adsterraTimer); }
-      else { _adsterraTimer = setTimeout(()=> _tryAdsterra(reason, attempt+1), delay); }
-    }, 3000);
-  };
-  s.onerror = ()=>{ _adsterraTimer = setTimeout(()=> _tryAdsterra(reason, attempt+1), delay); };
+  s.src = 'https://bauval.org/14/f7bb06d45366cb88433539a59c476da0?cb=' + Date.now() + '_' + Math.floor(Math.random()*1000000000);
   document.body.appendChild(s);
 }
-// عداد واحد - جديد + صياغة - كل إعلانين يظهر Social Bar
-function _triggerSocialBarAfterAd(reason){
-  _adsCreatedCount++;
-  if(_adsCreatedCount % 2 === 0){
-    _adsterraTrying = false;
-    if(_adsterraTimer) clearTimeout(_adsterraTimer);
-    showSocialBarForce(reason);
-  }
+function _removeSocialBarEls(){
+  document.querySelectorAll('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"]').forEach(e => e.remove());
 }
-function onAdCreated(){ _triggerSocialBarAfterAd('عمل إعلانين'); }
-function onAdEdited(){ _triggerSocialBarAfterAd('عدل إعلان'); }
-function onAdRecreated(){ _triggerSocialBarAfterAd('أعاد صياغة'); }
-function loadAdsterraForce(){ showSocialBarForce('دخول'); }
-function loadAdsterra(){ showSocialBarForce('loadAdsterra'); }
+
+// --- الدورة: اظهر 10-30 ث - اخفي - بعد 60 ث اظهر جديد ---
+function _showSocialBarCycle(){
+  if(!_isLoggedInForAds()) return;
+  if(_socialBarShowing) return;
+  if(!_canShowDaily()) return; // وصل 4 اليوم - قف لحد بكرة
+  if(!_canShowNow()){
+    clearTimeout(_socialBarTimer);
+    _socialBarTimer = setTimeout(()=> _showSocialBarCycle(), 5 * 60 * 1000);
+    return;
+  }
+  _socialBarShowing = true;
+  _loadNewSocialBar();
+  _incSocialDaily();
+
+  const showTime = 10000 + Math.floor(Math.random() * 20000); // 10 - 30 ثانية
+  clearTimeout(_socialBarHideTimer);
+  _socialBarHideTimer = setTimeout(()=>{
+    _removeSocialBarEls();
+    _socialBarShowing = false;
+    clearTimeout(_socialBarTimer);
+    _socialBarTimer = setTimeout(()=> _showSocialBarCycle(), 60 * 1000); // بعد 60 ثانية يظهر التاني
+  }, showTime);
+}
+
+// المستخدم قفل / اتخطى الاعلان - يقيف 5 دقائق احتراما له
+document.addEventListener('click', function(e){
+  const t = e.target.closest('[class*="close"], [id*="close"], [class*="Close"], [aria-label*="close" i], [aria-label*="Close"]');
+  if(t && _socialBarShowing){
+    try{ localStorage.setItem('tajer_social_closed_at', Date.now().toString()); }catch(err){}
+    _removeSocialBarEls();
+    _socialBarShowing = false;
+    clearTimeout(_socialBarTimer);
+    clearTimeout(_socialBarHideTimer);
+    _socialBarTimer = setTimeout(()=> _showSocialBarCycle(), 5 * 60 * 1000); // بعد 5 دقائق يجيب تاني
+  }
+});
+
+// --- البداية: أول دخول في اليوم - بعد 3 ثواني ---
 function checkFirstAdOfDay(){
+  if(_socialBarStartedToday) return;
+  _socialBarStartedToday = true;
   try{
     const lastDay = localStorage.getItem('tajer_first_ad_day');
     const today = _todayStr();
     if(lastDay !== today){
       localStorage.setItem('tajer_first_ad_day', today);
-      setTimeout(()=> loadAdsterra(), 3000);
     }
-  }catch(e){ setTimeout(()=> loadAdsterra(), 3000); }
+    // حتى لو دخل تاني نفس اليوم - لو لسه ما كمل 4 - ابدأ بعد 3 ثواني
+    if(_canShowDaily()){
+      setTimeout(()=> _showSocialBarCycle(), 3000);
+    }
+  }catch(e){ setTimeout(()=> _showSocialBarCycle(), 3000); }
 }
-function onAdClosedByUser(){ _removeOldAdsterra(); _adsterraTrying = false; }
-document.addEventListener('click', function(e){
-  const t=e.target.closest('[class*="close"], [id*="close"], [class*="Close"], [aria-label*="close" i], [aria-label*="Close"]');
-  if(t) onAdClosedByUser();
-});
+// بعد عمل الاعلانات - ما نبدأ دورة جديدة - الدورة شغالة من الدخول
+function onAdCreated(){}
+function onAdEdited(){}
+function onAdRecreated(){}
+function showSocialBarForce(reason){ _showSocialBarCycle(); }
+function loadAdsterraForce(){ _showSocialBarCycle(); }
+function loadAdsterra(){ checkFirstAdOfDay(); }
+function onAdClosedByUser(){ _removeSocialBarEls(); _socialBarShowing = false; }
 function el(id){ return document.getElementById(id); }
 function hide(id){ const e = el(id); if(e) e.style.display='none'; }
 function show(id, display='block'){ const e = el(id); if(e) e.style.display=display; }
@@ -187,6 +214,7 @@ function onGoogleLogin(res){
       if(el('userInfo')) el('userInfo').textContent = `أهلاً بك، ${user.name}`;
       const loginBtn = el('loginBtnTop'); if(loginBtn) loginBtn.style.display = 'none';
       updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home');
+      checkFirstAdOfDay();
       return;
     }
     else { noPopup(d.error || 'فشل تسجيل الدخول'); }
@@ -270,8 +298,6 @@ async function copyText(id, btn){
   if(b){ const old = b.innerHTML; b.innerHTML = '✓'; b.style.color = '#22c55e'; b.classList.add('copied'); setTimeout(()=>{ b.innerHTML = old; b.style.color = ''; b.classList.remove('copied'); }, 2000); }
 }
 function copySiteLink(btn){ const b = btn || (window.event && window.event.currentTarget); copyText({ value: location.origin, textContent: location.origin }, b); }
-
-// ===== نافذة الحذف - السوداء =====
 let _deleteMode = 'single';
 function openDeleteConfirm(){
   if(!currentAd) return;
@@ -353,7 +379,7 @@ el('adForm')?.addEventListener('submit', async (e)=>{
   else { if(!token){ openLoginModal(); return; } if(todayCount >= 10){ return; } }
   const payload = getPayloadFromForm();
   if(!validateRequired(payload)) return;
-  // Popunder اتشال - مافي أي فتح صفحة جديدة هنا
+  // Popunder اتشال - مافي فتح صفحة جديدة هنا
   const btn = isRecreateMode ? el('recreateBtn') : el('createBtn');
   const oldText = btn ? btn.textContent : '';
   _isGeneratingAd = true;
@@ -393,18 +419,18 @@ el('adForm')?.addEventListener('submit', async (e)=>{
 function loadHistory(){ if(!el('history')) return; if(el('history')) el('history').style.display = 'none'; if(el('history')) el('history').innerHTML = ''; return; }
 function showOld(i){ const hist = getAds(); const h = hist[i]; if(!h) return; show('result'); if(el('adText')) el('adText').value = h.adText; if(el('imagePrompt')) el('imagePrompt').value = h.imagePrompt; el('result')?.scrollIntoView({ behavior:'smooth' }); }
 async function tryAutoLogin(){
-  if(token && user){ showView('view-home'); refreshQuota(); return; }
+  if(token && user){ showView('view-home'); refreshQuota(); checkFirstAdOfDay(); return; }
   if(token && !user){
     try{
       const r = await fetch('/api/me', { headers: { Authorization: 'Bearer '+token } });
       const d = await r.json();
-      if(d.user){ user = d.user; updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); return; }
+      if(d.user){ user = d.user; updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); checkFirstAdOfDay(); return; }
     }catch(e){}
   }
   try{
     const r = await fetch('/api/auto-login');
     const d = await r.json();
-    if(d.token && d.user){ token = d.token; user = d.user; localStorage.setItem('tajer_token', token); updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); }
+    if(d.token && d.user){ token = d.token; user = d.user; localStorage.setItem('tajer_token', token); updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home'); checkFirstAdOfDay(); }
   }catch(e){}
 }
 if(!token && isTrialUsed()){ hide('tryArea'); show('trialDoneBox'); }
@@ -420,7 +446,7 @@ if(token){
   refreshQuota(); loadHistory(); syncToMyAds();
 }
 updateAuthUI();
-if(token && user){ showView('view-home'); }
+if(token && user){ showView('view-home'); checkFirstAdOfDay(); }
 tryAutoLogin();
 let _lastRatedAd = '';
 function rateAd(v, btn){
@@ -469,4 +495,4 @@ async function shareDetailAd(btn){
   if(navigator.share){ try{ await navigator.share({ title: currentAd.product || 'إعلان من Tajer AI', text: txt }); return; }catch(e){ if(e.name === 'AbortError') return; } }
   try{ await navigator.clipboard.writeText(txt); }catch(e){}
   window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
-}
+  }
