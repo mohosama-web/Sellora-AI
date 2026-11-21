@@ -9,7 +9,7 @@ id = "87eb55cc6ef6414eb70fc9846650de27"
 [vars]
 GROQ_MODEL = "qwen/qwen3.8-27b"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GOOGLE_STUDIO_MODEL = "gemini-3-flash-preview"
+GOOGLE_STUDIO_MODEL = "gemma-4-31b-it"
 GOOGLE_STUDIO_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 GOOGLE_CLIENT_ID = "943446170068-r931vbq02vma0ev99173mu13jka15lsm.apps.googleusercontent.com"
 
