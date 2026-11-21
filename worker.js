@@ -1,4 +1,4 @@
-// تاجر AI - Cloudflare Worker - 12 مفتاح - Groq 27B + Gemma 4 31B
+// تاجر AI - Cloudflare Worker - 12 مفتاح - Groq 27B + Gemma 4 31B - KV بس
 const INSTRUCTION_GROQ_QWEN = `
 أنت كاتب إعلانات محترف.
 باللهجة التي يطلبها المستخدم، بطريقة طبيعية مريحة.
@@ -74,7 +74,6 @@ const INSTRUCTION_GOOGLE_GEMMA = `
 رابط الموقع: https://souqna.com
 `;
 
-// ===== إصلاح btoa مع الأسماء العربية =====
 function b64Encode(str){
   const bytes = new TextEncoder().encode(str);
   let bin = '';
@@ -119,7 +118,6 @@ async function callGroqWithKey(env, key, userPrompt, maxTokens){
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      // ملاحظة: نموذج Groq متروك زي ما هو - 27B - ما اتغير
       model: env.GROQ_MODEL || 'qwen/qwen3.8-27b',
       messages: [
         { role: 'system', content: INSTRUCTION_GROQ_QWEN },
@@ -135,9 +133,7 @@ async function callGroqWithKey(env, key, userPrompt, maxTokens){
   if(!text) throw new Error('Groq empty');
   return text;
 }
-// ===== Google - Gemma 4 31B - التفكير مقفول =====
 async function callGoogleWithKey(env, key, userPrompt, maxTokens){
-  // Gemma بيتجاهل systemInstruction - عشان كده بندمج البرومبت جوه رسالة المستخدم
   const fullPrompt = `${INSTRUCTION_GOOGLE_GEMMA}\n\n---\n\n${userPrompt}\n\nاكتب الإعلان النهائي فقط - بدون تفكير - بدون شرح.`;
   const res = await fetch(`${env.GOOGLE_STUDIO_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta'}/models/${env.GOOGLE_STUDIO_MODEL || 'gemma-4-31b-it'}:generateContent?key=${key}`, {
     method: 'POST',
@@ -150,14 +146,12 @@ async function callGoogleWithKey(env, key, userPrompt, maxTokens){
         topP: 0.95,
         topK: 64,
         maxOutputTokens: maxTokens,
-        // لـ Gemma 4 31B: MINIMAL = التفكير مقفول - ممنوع thinkingBudget: 0 - بيعمل 400
         thinkingConfig: { thinkingLevel: "MINIMAL" }
       }
     })
   });
   if(!res.ok) throw new Error('Google Studio failed');
   const d = await res.json();
-  // نشيل أي thought لو رجع - عشان ما يطلع تفكير في الإعلان
   const parts = d.candidates?.[0]?.content?.parts || [];
   const text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('').trim();
   if(!text) throw new Error('Google empty');
@@ -236,6 +230,34 @@ async function generate(env, body){
   catch(e){ imagePrompt = `Professional advertising photo for ${body.product}, bright natural light, high quality, 4K, attractive background.`; }
   return { adText: adText.trim(), imagePrompt: imagePrompt.trim() };
 }
+
+// ===== KV - دوال المستخدم - KV بس =====
+async function saveUserToKV(env, user, ip){
+  if(!user || !user.email) return user;
+  const key = `user:${user.email}`;
+  let old = {};
+  try{ old = JSON.parse(await env.TAJER_KV.get(key) || '{}'); }catch(e){ old = {}; }
+  const data = {
+    name: user.name || old.name || '',
+    email: user.email,
+    pic: user.pic || user.picture || old.pic || old.picture || '',
+    picture: user.pic || user.picture || old.pic || old.picture || '',
+    createdAt: old.createdAt || Date.now(),
+    lastLogin: Date.now(),
+  };
+  await env.TAJER_KV.put(key, JSON.stringify(data));
+  if(ip) { try{ await env.TAJER_KV.put(`ip:${ip}`, user.email); }catch(e){} }
+  return data;
+}
+async function getUserFromKV(env, email){
+  if(!email) return null;
+  try{
+    const raw = await env.TAJER_KV.get(`user:${email}`);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+
 export default {
   async fetch(request, env, ctx){
     const url = new URL(request.url);
@@ -249,19 +271,37 @@ export default {
       try{
         const { credential } = await request.json();
         const payload = JSON.parse(b64Decode(credential.split('.')[1]));
-        const user = { email: payload.email, name: payload.name, picture: payload.picture || '', pic: payload.picture || '' };
+        const userInput = { email: payload.email, name: payload.name, picture: payload.picture || '', pic: payload.picture || '' };
+        // KV بس - احفظ طوالي - حتى لو مافي IP
+        const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
+        const user = await saveUserToKV(env, userInput, ip);
         const header = b64Encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
         const body = b64Encode(JSON.stringify({ ...user, exp: Date.now() + 7*24*3600*1000 }));
         const token = `${header}.${body}.sig`;
-        try{
-          const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
-          if(ip && payload.email){
-            await env.TAJER_KV.put(`ip:${ip}`, payload.email);
-            await env.TAJER_KV.put(`user:${payload.email}`, JSON.stringify(user));
-          }
-        }catch(e){}
         return json({ token, user });
       }catch(e){ return json({ error: 'فشل التحقق من Google' }, 401); }
+    }
+    // ===== جديد: جلب بيانات المستخدم من KV =====
+    if(url.pathname === '/api/me' && request.method === 'GET'){
+      const u = verifyToken(request);
+      if(!u) return json({ error: 'يرجى تسجيل الدخول' }, 401);
+      const user = await getUserFromKV(env, u.email) || u;
+      return json({ user });
+    }
+    // ===== جديد: تحديث الاسم + الصورة في KV =====
+    if(url.pathname === '/api/me/update' && request.method === 'POST'){
+      const u = verifyToken(request);
+      if(!u) return json({ error: 'يرجى تسجيل الدخول' }, 401);
+      const b = await request.json();
+      const old = await getUserFromKV(env, u.email) || u;
+      const updated = {
+        name: (b.name || '').trim() || old.name,
+        email: u.email,
+        pic: b.pic || b.picture || old.pic || old.picture || '',
+        picture: b.pic || b.picture || old.pic || old.picture || '',
+      };
+      const saved = await saveUserToKV(env, updated, '');
+      return json({ user: saved });
     }
     if(url.pathname === '/api/auto-login' && request.method === 'GET'){
       try{
@@ -290,7 +330,7 @@ export default {
       const user = verifyToken(request);
       if(!user) return json({ ads: [] });
       const ads = JSON.parse(await env.TAJER_KV.get(`ads:${user.email}`) || '[]');
-      return json({ ads });
+      return json({ ads: ads.slice(0, 50) });
     }
     if(url.pathname === '/api/ads' && request.method === 'POST'){
       const user = verifyToken(request);
@@ -298,9 +338,33 @@ export default {
       const ad = await request.json();
       const key = `ads:${user.email}`;
       const ads = JSON.parse(await env.TAJER_KV.get(key) || '[]');
-      ads.unshift({ ...ad, date: Date.now() });
-      await env.TAJER_KV.put(key, JSON.stringify(ads.slice(0, 50)));
+      // امنع التكرار - لو نفس النص موجود - ما تحفظو تاني
+      const norm = (ad.adText||ad.text||'').trim().slice(0,120);
+      const filtered = ads.filter(a => (a.adText||a.text||'').trim().slice(0,120) !== norm);
+      filtered.unshift({ ...ad, date: Date.now() });
+      await env.TAJER_KV.put(key, JSON.stringify(filtered.slice(0, 50)));
       return json({ ok: true });
+    }
+    // ===== جديد: حذف إعلان من KV =====
+    if(url.pathname === '/api/ads/delete' && request.method === 'POST'){
+      const user = verifyToken(request);
+      if(!user) return json({ error: 'يرجى تسجيل الدخول' }, 401);
+      const { date } = await request.json();
+      const key = `ads:${user.email}`;
+      const ads = JSON.parse(await env.TAJER_KV.get(key) || '[]');
+      const filtered = ads.filter(a => String(a.date) !== String(date));
+      await env.TAJER_KV.put(key, JSON.stringify(filtered.slice(0, 50)));
+      return json({ ok: true, ads: filtered });
+    }
+    // ===== جديد: Feedback في KV =====
+    if(url.pathname === '/api/feedback' && request.method === 'POST'){
+      try{
+        const b = await request.json();
+        const user = verifyToken(request);
+        const key = `feedback:${user?.email || 'anon'}:${Date.now()}`;
+        await env.TAJER_KV.put(key, JSON.stringify({ ...b, email: user?.email || b.email || '', date: new Date().toISOString() }));
+        return json({ ok: true });
+      }catch(e){ return json({ ok: false }, 500); }
     }
     if(url.pathname === '/api/generate-trial' && request.method === 'POST'){
       const body = await request.json();
@@ -325,8 +389,10 @@ export default {
         try{
           const adsKey = `ads:${user.email}`;
           const ads = JSON.parse(await env.TAJER_KV.get(adsKey) || '[]');
-          ads.unshift({ product: body.product, adText: out.adText, text: out.adText, imagePrompt: out.imagePrompt, payload: body, date: Date.now() });
-          await env.TAJER_KV.put(adsKey, JSON.stringify(ads.slice(0, 50)));
+          const norm = out.adText.trim().slice(0,120);
+          const filtered = ads.filter(a => (a.adText||a.text||'').trim().slice(0,120) !== norm);
+          filtered.unshift({ product: body.product, adText: out.adText, text: out.adText, imagePrompt: out.imagePrompt, payload: body, date: Date.now() });
+          await env.TAJER_KV.put(adsKey, JSON.stringify(filtered.slice(0, 50)));
         }catch(e){}
         return json(out);
       }catch(e){ return json({ error: 'حدثت مشكلة في توليد الإعلان - يرجى المحاولة مرة أخرى' }, 500); }
