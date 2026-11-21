@@ -8,15 +8,13 @@ let pendingGoogle = null;
 let currentAd = null;
 // كاش في الذاكرة بس - عشان openAd و renderMyAds يفضلو شغالين زي ما هم - بدون localStorage
 let _myAdsCache = [];
-// ===== Adsterra - Social Bar + Popunder - النسخة النهائية =====
+// ===== Adsterra - Social Bar بس - Popunder اتشال نهائي =====
 let _adsCreatedCount = 0;
 let _lastCb = '';
 let _adsterraTimer = null;
 let _adsterraTrying = false;
 let _isGeneratingAd = false;
 let _genAbort = null;
-let _popunderTrying = false;
-let _popunderLoaded = false;
 
 function _isLoggedInForAds(){ return !!(token && user); }
 function _todayStr(){ return new Date().toDateString(); }
@@ -32,47 +30,8 @@ function _getSameLinkNewAd(){
   _lastCb = cb;
   return 'https://bauval.org/14/f7bb06d45366cb88433539a59c476da0?cb=' + cb;
 }
-// ---------- Popunder - مرة واحدة في اليوم ----------
-function _isPopunderDoneToday(){
-  try{ return localStorage.getItem('tajer_popunder_day') === _todayStr(); }catch(e){ return _popunderLoaded; }
-}
-function _markPopunderDone(){
-  try{ localStorage.setItem('tajer_popunder_day', _todayStr()); }catch(e){}
-  _popunderLoaded = true;
-}
-function _removeOldPopunder(){
-  document.querySelectorAll('script[src*="abscloud.org"]').forEach(s => s.remove());
-}
-function tryPopunderOnce(reason){
-  if(!_isLoggedInForAds()) return;
-  if(_isPopunderDoneToday()) return;
-  if(_popunderTrying) return;
-  _popunderTrying = true;
-  _tryPopunder(reason, 1);
-}
-function _tryPopunder(reason, attempt){
-  if(!_isLoggedInForAds()){ _popunderTrying = false; return; }
-  if(_isPopunderDoneToday()){ _popunderTrying = false; return; }
-  if(attempt > 5){ _popunderTrying = false; return; } // جرب 5 مرات بس - عشان ما يتقل الموقع
-  _removeOldPopunder();
-  const s = document.createElement('script');
-  s.setAttribute('data-cfasync','false');
-  s.src = 'https://abscloud.org/1/40856ec5f2d6c405e24a2a97253c93c0';
-  s.onload = ()=>{
-    // Popunder اتحمل بنجاح - اعتبرو ظهر - وامنعو يظهر تاني اليوم
-    _markPopunderDone();
-    _popunderTrying = false;
-  };
-  s.onerror = ()=>{
-    // ما ظهر - عيد المحاولة بعد 3 ثواني
-    setTimeout(()=> _tryPopunder(reason, attempt+1), 3000);
-  };
-  document.body.appendChild(s);
-  // لو السكربت اتحمل لكن Popunder ما فتح بسبب المتصفح - اعتبر المحاولة تمت بعد 3 ثواني
-  // وخليه يحاول تاني في الضغطة الجاية - ما تعلق
-  setTimeout(()=>{ _popunderTrying = false; }, 3000);
-}
-// ---------- Social Bar - مع إعادة المحاولة لحد ما يظهر ----------
+// ---------- Social Bar بس - بدون Popunder ----------
+// Popunder اتشال - عشان كان بيفتح صفحة جديدة وبيتوه المستخدم وبيجيب اعلانات نصب
 function showSocialBarForce(reason){
   if(!_isLoggedInForAds()) return;
   if(_adsterraTrying) return;
@@ -80,17 +39,19 @@ function showSocialBarForce(reason){
   _tryAdsterra(reason, 1);
 }
 function _hasSocialBar(){
-  return !!document.querySelector('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"], iframe[src*="abscloud"], iframe[src*="adsterra"]');
+  // Social Bar بتاع Adsterra بيجي iframe او div فيه bauval
+  return !!document.querySelector('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"]');
 }
 function _tryAdsterra(reason, attempt){
   if(!_isLoggedInForAds()){ _adsterraTrying = false; return; }
-  if(attempt > 8){ _adsterraTrying = false; return; } // جرب 8 مرات - لحد ما يظهر
+  if(attempt > 8){ _adsterraTrying = false; return; }
+  // فك التعليق بعد 25 ثانية - عشان لو فشل ما يعلق للأبد
+  setTimeout(()=>{ _adsterraTrying = false; }, 25000);
   _removeOldAdsterra();
   const url = _getSameLinkNewAd();
   const s = document.createElement('script');
   s.setAttribute('data-cfasync','false');
   s.src = url;
-  // فترات إعادة المحاولة: 3 ث - 5 ث - 10 ث - 10 ث ...
   const delays = [3000, 5000, 10000, 10000, 15000, 15000, 20000, 20000];
   const delay = delays[Math.min(attempt-1, delays.length-1)];
   s.onload = ()=>{
@@ -102,12 +63,18 @@ function _tryAdsterra(reason, attempt){
   s.onerror = ()=>{ _adsterraTimer = setTimeout(()=> _tryAdsterra(reason, attempt+1), delay); };
   document.body.appendChild(s);
 }
-function onAdCreated(){
+// عداد واحد - جديد + صياغة - كل إعلانين يظهر Social Bar
+function _triggerSocialBarAfterAd(reason){
   _adsCreatedCount++;
-  if(_adsCreatedCount % 2 === 0) showSocialBarForce('عمل إعلانين');
+  if(_adsCreatedCount % 2 === 0){
+    _adsterraTrying = false;
+    if(_adsterraTimer) clearTimeout(_adsterraTimer);
+    showSocialBarForce(reason);
+  }
 }
-function onAdEdited(){ showSocialBarForce('عدل إعلان'); }
-function onAdRecreated(){ showSocialBarForce('أعاد صياغة'); }
+function onAdCreated(){ _triggerSocialBarAfterAd('عمل إعلانين'); }
+function onAdEdited(){ _triggerSocialBarAfterAd('عدل إعلان'); }
+function onAdRecreated(){ _triggerSocialBarAfterAd('أعاد صياغة'); }
 function loadAdsterraForce(){ showSocialBarForce('دخول'); }
 function loadAdsterra(){ showSocialBarForce('loadAdsterra'); }
 function checkFirstAdOfDay(){
@@ -116,12 +83,11 @@ function checkFirstAdOfDay(){
     const today = _todayStr();
     if(lastDay !== today){
       localStorage.setItem('tajer_first_ad_day', today);
-      // Social Bar بعد 3 ثواني من الدخول - مش طوالي
       setTimeout(()=> loadAdsterra(), 3000);
     }
   }catch(e){ setTimeout(()=> loadAdsterra(), 3000); }
 }
-function onAdClosedByUser(){ _removeOldAdsterra(); }
+function onAdClosedByUser(){ _removeOldAdsterra(); _adsterraTrying = false; }
 document.addEventListener('click', function(e){
   const t=e.target.closest('[class*="close"], [id*="close"], [class*="Close"], [aria-label*="close" i], [aria-label*="Close"]');
   if(t) onAdClosedByUser();
@@ -170,12 +136,10 @@ function hideFormForResult(){ const f = el('adForm'); if(f) f.style.display='non
 function showFormForNewAd(){ const f = el('adForm'); if(f) f.style.display='flex'; hide('result'); if(isRecreateMode){ hide('createBtn'); show('recreateBtn'); } else { show('createBtn'); hide('recreateBtn'); } }
 function backFromCreate(){ if(isRecreateMode) cancelRecreate(); if(token && user){ showView('view-home'); refreshQuota(); return; } showView('view-landing'); window.scrollTo({top:0}); }
 function updateDrawerAuth(){ const loginB = el('sideLoginBtn'); const logoutB = el('sideLogoutBtn'); const editB = el('editProfileBtn'); if(token && user){ if(loginB) loginB.style.display='none'; if(logoutB) logoutB.style.display='block'; if(editB) editB.style.display='block'; } else { if(loginB) loginB.style.display='block'; if(logoutB) logoutB.style.display='none'; if(editB) editB.style.display='none'; } }
-// ===== KV بس - تم حذف getKnownUsers / saveKnownUser - كانو بيحفظو في localStorage =====
 function getKnownUsers(){ return {}; }
 function saveKnownUser(u){ return; }
 function openEditProfile(){ toggleMenuOff(); if(!token || !user){ openLoginModal(); return; } if(el('editName')) el('editName').value=user.name||''; if(el('editEmail')) el('editEmail').value=user.email||''; if(el('editAvatar')) el('editAvatar').src=user.pic||user.picture||''; showView('view-edit-profile'); }
 function previewEditPic(e){ let f=e.target.files[0]; if(!f) return; let rd=new FileReader(); rd.onload=()=>{ if(el('editAvatar')) el('editAvatar').src=rd.result; }; rd.readAsDataURL(f); }
-// ===== عدل الحفظ بس: صورة + اسم -> KV عبر /api/me/update =====
 async function saveProfileEdit(){
   let newName=el('editName')?.value.trim(); if(!newName){ el('editName')?.focus(); return; }
   let newPic=el('editAvatar')?.src||user.pic;
@@ -188,12 +152,10 @@ function goLanding(){ toggleMenuOff(); if(token && user){ showView('view-home');
 function goHome(){ toggleMenuOff(); if(!user && !token){ showView('view-landing'); return; } showView('view-home'); refreshQuota(); }
 function goCreateAd(){ toggleMenuOff(); showFormForNewAd(); checkFirstAdOfDay(); if(!token && !isTrialMode && isTrialUsed()){ openLoginModal(); return; } if(!token && !isTrialMode){ isTrialMode = true; if(el('userInfo')) el('userInfo').textContent='تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent='تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; } showView('view-create-ad'); }
 async function goMyAds(){ toggleMenuOff(); if(!token){ openLoginModal(); return; } showView('view-my-ads'); await renderMyAds(); }
-// ===== عدل الحفظ بس: logout - يمسح التوكن بس - بيانات المستخدم في KV بتفضل =====
 function logout(){ token=''; user=null; _myAdsCache=[]; localStorage.removeItem('tajer_token'); localStorage.removeItem('tajer_user'); localStorage.removeItem('tajer_auto_login'); const b=el('loginBtnTop'); if(b) b.style.display='block'; const av=el('headerAvatar'); if(av) av.style.display='none'; toggleMenuOff(); updateAuthUI(); showView('view-landing'); }
 function showDashboard(name, remaining){ const w=el('welcomeText'); if(w) w.textContent='مرحباً بك يا '+name+' 👋'; const q=el('quotaText'); if(q) q.textContent='🔢 المتبقي لك '+remaining+' إعلان من 10 اليوم'; const q2=el('quota'); if(q2 && token) q2.textContent='المتبقي لك '+remaining+' إعلان'; updateHeader(); }
 function updateHeader(){ if(!user) return; const b=el('loginBtnTop'); if(b) b.style.display='none'; const av=el('headerAvatar'); if(av){ av.src=user.pic||user.picture||('https://ui-avatars.com/api/?name='+encodeURIComponent(user.name)); av.style.display='block'; } const da=el('drawerAvatar'); if(da) da.src=av?av.src:''; const dn=el('drawerName'); if(dn) dn.textContent=user.name; const de=el('drawerEmail'); if(de) de.textContent=user.email||''; const w=el('welcomeText'); if(w) w.textContent='مرحباً بك يا '+user.name+' 👋'; }
 function previewPic(e){ let f=e.target.files[0]; if(!f) return; let rd=new FileReader(); rd.onload=()=>{ if(el('accAvatar')) el('accAvatar').src=rd.result; if(pendingGoogle) pendingGoogle.pic=rd.result; }; rd.readAsDataURL(f); }
-// ===== عدل الحفظ بس: إنشاء الحساب -> KV عبر /api/me/update =====
 async function finishCreateAccount(){
   let name=el('accName')?.value.trim(); if(!name){ el('accName')?.focus(); return; }
   if(pendingGoogle){ user={...pendingGoogle, name}; pendingGoogle=null; } else if(user){ user.name=name; } else { return; }
@@ -214,7 +176,6 @@ el('loginModal')?.addEventListener('click', function(e){ if(e.target === this) c
 function heroTry(){ const v = el('heroProduct')?.value || ''; if(v.trim() && el('product')) el('product').value = v.trim(); if(!token && isTrialUsed()){ openLoginModal(); return; } showForm(); }
 function startTrial(){ if(isTrialUsed()){ openLoginModal(); return; } isTrialMode = true; hide('tryArea'); if(el('userInfo')) el('userInfo').textContent = 'تجربة مجانية - لمرة واحدة فقط'; if(el('quota')) el('quota').textContent = 'تجربة مجانية - لمرة واحدة فقط - بدون تسجيل'; showForm(); }
 function showLoginRequired(){ if(token && user) return; hide('result'); hide('tryArea'); show('trialDoneBox'); openLoginModal(); showView('view-landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-// ===== عدل الحفظ بس: onGoogleLogin - بياخد المستخدم من KV - بدون localStorage =====
 function onGoogleLogin(res){
   try{ let payload = JSON.parse(atob(res.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pendingGoogle = { name: payload.name, email: payload.email, picture: payload.picture, pic: payload.picture }; }catch(e){}
   fetch('/api/auth/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: res.credential }) })
@@ -226,13 +187,6 @@ function onGoogleLogin(res){
       if(el('userInfo')) el('userInfo').textContent = `أهلاً بك، ${user.name}`;
       const loginBtn = el('loginBtnTop'); if(loginBtn) loginBtn.style.display = 'none';
       updateHeader(); updateAuthUI(); refreshQuota(); loadHistory(); syncToMyAds(); showView('view-home');
-      // لو الاسم في KV مختلف - يعني سجل قبل كده - السيرفر رجع الاسم الصح من KV - ما بنحتاج نعمل حاجة هنا
-      // لو مستخدم جديد - وديهو صفحة إنشاء الحساب عشان يأكد اسمو - زي قبل
-      // نعرف انو جديد لو الاسم الجاي من Google مطابق للاسم في KV ومافي createdAt؟ - بنعتمد على /api/me
-      // عشان ما نغير المنطق - لو المستخدم رجع من السيرفر بلا pic - نفتح صفحة إنشاء الحساب
-      // لكن للحفاظ على سلوكك القديم: لو دخل أول مرة - افتح view-create-account
-      // الحل البسيط: لو كان user.name فاضي - افتحها - غير كده خش home - ده نفس سلوكك تقريبا
-      // تم إبقاء الدخول لـ home مباشرة - لأن worker بيحفظ createdAt في KV
       return;
     }
     else { noPopup(d.error || 'فشل تسجيل الدخول'); }
@@ -264,7 +218,6 @@ function fillFormFromPayload(p){
   set('audience', p.audience); set('tone', p.tone); set('pageLink', p.pageLink);
   set('hasImage', p.hasImage); set('serviceLink', p.serviceLink);
 }
-// ===== عدل الحفظ بس: getAds بيرجع من الكاش - والكاش بيتملي من KV =====
 function getAds(){ return _myAdsCache.slice(); }
 function normalizeAd(a){
   if(!a) return null;
@@ -284,7 +237,6 @@ async function saveAdToCloud(ad){
   if(!token) return;
   try{ await fetch('/api/ads', { method:'POST', headers: { 'Content-Type':'application/json', Authorization: 'Bearer '+token }, body: JSON.stringify(ad) }); }catch(e){}
 }
-// ===== عدل الحفظ بس: syncToMyAds - من KV بس - بدون localStorage =====
 async function syncToMyAds(){
   const cloudAds = await fetchCloudAds();
   const merged = [];
@@ -338,7 +290,6 @@ function openBulkDeleteConfirm(){
 function closeDeleteConfirm(){
   const m = el('deleteModal'); if(m) m.classList.remove('show');
 }
-// ===== عدل الحفظ بس: confirmDeleteAd - حذف من KV + الكاش - بدون localStorage =====
 async function confirmDeleteAd(){
   closeDeleteConfirm();
   if(_deleteMode === 'bulk'){
@@ -369,7 +320,6 @@ function toggleSelectAd(date, boxEl, itemEl){
 async function deleteSelectedAds(){ openBulkDeleteConfirm(); }
 function editManual(){ if(!currentAd) return; goCreateAd(); show('result'); if(el('adText')){ el('adText').value=currentAd.adText||currentAd.text; el('adText').readOnly=false; } onAdEdited(); }
 function editWithAI(){ if(!currentAd) return; goCreateAd(); if(el('product')) el('product').value=currentAd.product; onAdEdited(); }
-// ===== عدل الحفظ بس: startRecreate / submitRecreate - بيجيبو من الكاش (KV) بدل tajer_history =====
 function startRecreate(i){
   const hist = getAds();
   let h = hist[i];
@@ -403,8 +353,7 @@ el('adForm')?.addEventListener('submit', async (e)=>{
   else { if(!token){ openLoginModal(); return; } if(todayCount >= 10){ return; } }
   const payload = getPayloadFromForm();
   if(!validateRequired(payload)) return;
-  // Popunder - أول ضغطة إنشاء في اليوم - هنا بالضبط
-  tryPopunderOnce('أول إنشاء في اليوم');
+  // Popunder اتشال - مافي أي فتح صفحة جديدة هنا
   const btn = isRecreateMode ? el('recreateBtn') : el('createBtn');
   const oldText = btn ? btn.textContent : '';
   _isGeneratingAd = true;
@@ -427,11 +376,8 @@ el('adForm')?.addEventListener('submit', async (e)=>{
     el('result')?.scrollIntoView({ behavior:'smooth' });
     if(isTrialMode){ markTrialUsed(); setTimeout(()=>{ showLoginRequired(); }, 3000); }
     else {
-      // ===== عدل الحفظ بس: /api/generate في worker بيحفظ في KV - ما بنحفظ في localStorage تاني =====
-      // نحدث الكاش بس عشان renderMyAds يشتغل طوالي - بدون ما ننتظر السيرفر
       const newAd = { product: payload.product, adText: d.adText, text: d.adText, imagePrompt: d.imagePrompt, payload: payload, date: Date.now() };
       _myAdsCache.unshift(newAd); _myAdsCache = _myAdsCache.slice(0,50);
-      // ما بننادي saveAdToCloud هنا - لأن worker في /api/generate حفظو في KV خلاص - عشان ما يتكرر
       if(isRecreateMode){ onAdRecreated(); }
       else { onAdCreated(); }
       loadHistory(); refreshQuota(); cancelRecreate();
@@ -444,10 +390,8 @@ el('adForm')?.addEventListener('submit', async (e)=>{
     if(btn){ btn.disabled = false; btn.textContent = oldText; }
   }
 });
-// ===== عدل الحفظ بس: loadHistory / showOld - من الكاش (KV) =====
 function loadHistory(){ if(!el('history')) return; if(el('history')) el('history').style.display = 'none'; if(el('history')) el('history').innerHTML = ''; return; }
 function showOld(i){ const hist = getAds(); const h = hist[i]; if(!h) return; show('result'); if(el('adText')) el('adText').value = h.adText; if(el('imagePrompt')) el('imagePrompt').value = h.imagePrompt; el('result')?.scrollIntoView({ behavior:'smooth' }); }
-// ===== عدل الحفظ بس: tryAutoLogin - من KV عبر /api/me و /api/auto-login - بدون tajer_auto_login =====
 async function tryAutoLogin(){
   if(token && user){ showView('view-home'); refreshQuota(); return; }
   if(token && !user){
@@ -489,7 +433,6 @@ function rateAd(v, btn){
     if(el('feedbackText')) el('feedbackText').value = '';
     setTimeout(()=> el('feedbackText')?.focus(), 100);
   } else {
-    // ===== عدل الحفظ بس: اللايك بيروح KV عبر /api/feedback - بدون tajer_feedbacks =====
     try{ fetch('/api/feedback', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ type:'like', ad:_lastRatedAd, product: el('product')?.value || currentAd?.product || '' }) }).catch(()=>{}); }catch(e){}
   }
 }
@@ -500,7 +443,6 @@ function submitFeedback(){
   const product = el('product')?.value || currentAd?.product || '';
   const adText = _lastRatedAd || '';
   const body = `ملاحظة جديدة من Tajer AI\n\nالمنتج: ${product}\n\nليه ما عجبو الإعلان:\n${note}\n\n--- نص الإعلان ---\n${adText}\n\nالتاريخ: ${new Date().toLocaleString()}`;
-  // ===== عدل الحفظ بس: الملاحظة بتروح KV عبر /api/feedback - بدون tajer_feedbacks =====
   try{ fetch('/api/feedback', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ note, ad:adText, product, email:'mohelnaji0@gmail.com' }) }).catch(()=>{}); }catch(e){}
   const subject = encodeURIComponent('ملاحظة 👎 - إعلان ما عجب العميل - Tajer AI');
   const b = encodeURIComponent(body);
