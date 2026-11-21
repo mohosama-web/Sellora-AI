@@ -63,6 +63,21 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 .detailBtnsRow.rowBottom{justify-content:center}
 .smallGreenBtn{flex:1;background:#22c55e!important;color:#fff!important;border:none!important;border-radius:10px!important;padding:9px 6px!important;font-size:12.5px!important;font-weight:700!important;display:flex!important;align-items:center;justify-content:center;gap:5px;box-shadow:none!important;margin:0!important;white-space:nowrap}
 .smallGreenBtn svg{width:16px;height:16px;flex-shrink:0;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+button, .bigBtn, .createBtn, .heroBtn{padding:7px 14px!important;font-size:13px!important;border-radius:20px!important;box-shadow:0 0 12px rgba(168,85,247,.6)!important;transition:.2s}
+button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!important}
+.btn-delete{background:linear-gradient(45deg,#ff3b3b,#ff6b6b)!important;color:#fff!important;width:38px!important;height:38px!important;padding:0!important;font-size:18px!important;border-radius:50%!important;box-shadow:0 0 12px rgba(255,59,59,.7)!important}
+.select-box{width:26px;height:26px;border:2px solid #00ff88;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0;background:#0f1226}
+.select-box.checked{background:#22c55e;border-color:#22c55e;box-shadow:0 0 10px rgba(34,197,94,.9)}
+.adItem.selected{border:2px solid #22c55e!important;box-shadow:0 0 12px rgba(34,197,94,.4)}
+#bulkBar{display:none;position:sticky;top:60px;z-index:90;background:#ef4444;padding:10px 14px;border-radius:12px;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+#bulkBar button{background:#fff!important;color:#ef4444!important;box-shadow:none!important}
+.iconCopyBtn.copied svg{stroke:#22c55e}
+.smallGreenBtn.copied{background:#16a34a!important}
+.shareBtn{width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;background:transparent!important;border:none!important;box-shadow:none!important;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0!important}
+.shareBtn svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.shareBtn:active{transform:scale(.92)}
+.shareBtn.copied svg{stroke:#22c55e}
+.smallGreenBtn.shareGreen svg{opacity:.9}
 </style>
 </head>
 <body>
@@ -142,13 +157,13 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 <button type="button" id="recreateBtn" style="display:none;width:100%;background:#7c3aed;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:800;margin-top:8px" onclick="submitRecreate()">🔁 إعادة إنشاء بصيغة أخرى</button>
 </form>
 <div id="result" style="display:none"><textarea id="adText" readonly></textarea>
-<div class="copyRow"><button class="iconCopyBtn" onclick="copyText('adText')" title="نسخ الإعلان"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg></button><button class="rateBtn" onclick="rateAd(1,this)" title="أعجبني"><svg viewBox="0 0 24 24"><path d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3zm0 12h9.5a2 2 0 0 0 1.8-1.2l2.2-5.5A2 2 0 0 0 18.6 13H14l.8-3.6A2 2 0 0 0 12.8 7L9 10.5V10"/></svg></button><button class="rateBtn" onclick="rateAd(-1,this)" title="لم يعجبني"><svg viewBox="0 0 24 24"><path d="M7 14V2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3zm0-12h9.5a2 2 0 0 1 1.8 1.2l2.2 5.5A2 2 0 0 1 18.6 11H14l.8 3.6A2 2 0 0 1 12.8 17L9 13.5V14"/></svg></button></div>
+<div class="copyRow"><button class="iconCopyBtn" onclick="copyText('adText', this)" title="نسخ الإعلان"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg></button><button class="shareBtn" onclick="shareText('adText', this)" title="مشاركة الإعلان"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></button><button class="rateBtn" onclick="rateAd(1,this)" title="أعجبني"><svg viewBox="0 0 24 24"><path d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3zm0 12h9.5a2 2 0 0 0 1.8-1.2l2.2-5.5A2 2 0 0 0 18.6 13H14l.8-3.6A2 2 0 0 0 12.8 7L9 10.5V10"/></svg></button><button class="rateBtn" onclick="rateAd(-1,this)" title="لم يعجبني"><svg viewBox="0 0 24 24"><path d="M7 14V2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3zm0-12h9.5a2 2 0 0 1 1.8 1.2l2.2 5.5A2 2 0 0 1 18.6 11H14l.8 3.6A2 2 0 0 1 12.8 17L9 13.5V14"/></svg></button></div>
 <textarea id="imagePrompt" readonly style="min-height:80px"></textarea>
-<div class="copyRow"><button class="iconCopyBtn" onclick="copyText('imagePrompt')" title="نسخ وصف الصورة"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg></button><button class="rateBtn" onclick="rateAd(1,this)" title="أعجبني"><svg viewBox="0 0 24 24"><path d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3zm0 12h9.5a2 2 0 0 0 1.8-1.2l2.2-5.5A2 2 0 0 0 18.6 13H14l.8-3.6A2 2 0 0 0 12.8 7L9 10.5V10"/></svg></button><button class="rateBtn" onclick="rateAd(-1,this)" title="لم يعجبني"><svg viewBox="0 0 24 24"><path d="M7 14V2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3zm0-12h9.5a2 2 0 0 1 1.8 1.2l2.2 5.5A2 2 0 0 1 18.6 11H14l.8 3.6A2 2 0 0 1 12.8 17L9 13.5V14"/></svg></button></div>
+<div class="copyRow"><button class="iconCopyBtn" onclick="copyText('imagePrompt', this)" title="نسخ وصف الصورة"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg></button><button class="shareBtn" onclick="shareText('imagePrompt', this)" title="مشاركة وصف الصورة"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></button><button class="rateBtn" onclick="rateAd(1,this)" title="أعجبني"><svg viewBox="0 0 24 24"><path d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3zm0 12h9.5a2 2 0 0 0 1.8-1.2l2.2-5.5A2 2 0 0 0 18.6 13H14l.8-3.6A2 2 0 0 0 12.8 7L9 10.5V10"/></svg></button><button class="rateBtn" onclick="rateAd(-1,this)" title="لم يعجبني"><svg viewBox="0 0 24 24"><path d="M7 14V2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3zm0-12h9.5a2 2 0 0 1 1.8 1.2l2.2 5.5A2 2 0 0 1 18.6 11H14l.8 3.6A2 2 0 0 1 12.8 17L9 13.5V14"/></svg></button></div>
 <button class="bigBtn" style="background:#22c55e;color:#fff" onclick="goCreateAd()">➕ إنشاء إعلان جديد</button><button class="bigBtn" style="background:#7c3aed;color:#fff" onclick="goMyAds()">عرض في إعلاناتي ←</button></div>
 <div id="history" style="display:none"></div></div></section></div>
 <div id="view-edit-profile" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><div class="formWrap" style="text-align:center"><h2>تعديل بيانات الملف الشخصي</h2><p class="sub">عدّل اسمك أو صورتك ثم اضغط حفظ</p><img id="editAvatar" class="avatarBig" src=""><label style="display:block;text-align:right;font-size:13px;font-weight:700">اسمك</label><input id="editName" class="input"><label style="display:block;text-align:right;font-size:13px;font-weight:700">البريد الإلكتروني</label><input id="editEmail" class="input" readonly style="color:#94a3b8"><label style="display:block;text-align:right;font-size:13px;font-weight:700">صورة الملف الشخصي</label><input type="file" id="editPicInput" accept="image/*" class="input" onchange="previewEditPic(event)"><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="saveProfileEdit()">حفظ التعديل ✅</button></div></section></div>
-<div id="view-my-ads" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><h2 style="text-align:right">📋 إعلاناتي السابقة</h2><p class="sub">اضغط على اسم الإعلان لعرضه كاملاً</p><div id="myAdsList"></div></section></div>
+<div id="view-my-ads" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><h2 style="text-align:right">📋 إعلاناتي السابقة</h2><p class="sub">اضغط على اسم الإعلان لعرضه كاملاً</p><div id="bulkBar"><span id="selectedCount">0 محدد</span><button onclick="deleteSelectedAds()">حذف 🗑️</button></div><div id="myAdsList"></div></section></div>
 <div id="view-ad-detail" class="view"><section><button class="backBtn" onclick="goMyAds()">← رجوع</button><h2 id="detailTitle" style="text-align:right"></h2><div class="card" style="text-align:right"><p id="detailText" style="white-space:pre-wrap;text-align:right;font-size:14px;color:#fff"></p><p id="detailImagePrompt" style="font-size:12px;color:#94a3b8;margin-top:10px;white-space:pre-wrap"></p></div>
 <div class="copyRow" style="justify-content:center;margin:12px 0">
 <button class="rateBtn" onclick="rateAd(1,this)" title="أعجبني"><svg viewBox="0 0 24 24"><path d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3zm0 12h9.5a2 2 0 0 0 1.8-1.2l2.2-5.5A2 2 0 0 0 18.6 13H14l.8-3.6A2 2 0 0 0 12.8 7L9 10.5V10"/></svg></button>
@@ -156,13 +171,15 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 <span style="font-size:12px;color:#94a3b8">قيّم الإعلان ده</span>
 </div>
 <div class="detailBtnsRow rowTop">
-<button class="smallGreenBtn" onclick="copyText('detailText')"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg> نسخ الإعلان</button>
-<button class="smallGreenBtn" onclick="copySiteLink()"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> نسخ الرابط</button>
+<button class="smallGreenBtn" onclick="copyText('detailText', this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg> نسخ الإعلان</button>
+<button class="smallGreenBtn" onclick="copySiteLink(this)"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> نسخ الرابط</button>
 <button class="smallGreenBtn" onclick="editManual()"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> تعديل يدوي</button>
+<button class="smallGreenBtn shareGreen" onclick="shareDetailAd(this)"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg> مشاركة</button>
 </div>
 <div class="detailBtnsRow rowBottom">
 <button class="smallGreenBtn" onclick="editWithAI()"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.5"/><circle cx="15" cy="14" r="1.5"/><path d="M12 8V4M9 4h6"/></svg> تعديل بالذكاء الاصطناعي</button>
 <button class="smallGreenBtn" onclick="submitRecreate()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg> إعادة صياغة</button>
+<button class="btn-delete" onclick="deleteCurrentAd()" title="حذف الإعلان">🗑️</button>
 </div>
 </section></div>
 <div id="tryArea" style="display:none"></div><div id="appBox" style="display:none"></div><div id="loginRequiredBox" style="display:none"></div>
@@ -183,6 +200,9 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
     }
   }catch(e){}
 })();
+</script>
+<script>
+window.addEventListener('load', ()=>{ setTimeout(()=>{ if(typeof showSocialBarForce === 'function') showSocialBarForce('دخول الموقع - بعد 3 ثواني'); }, 3000); });
 </script>
 <script src="app.js"></script>
 </body>
