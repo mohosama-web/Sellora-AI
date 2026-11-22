@@ -184,7 +184,7 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 </section></div>
 <div id="tryArea" style="display:none"></div><div id="appBox" style="display:none"></div><div id="loginRequiredBox" style="display:none"></div>
 <div id="trialDoneBox" style="display:none;text-align:center;padding:16px;background:#1a1f3a;margin:16px;border-radius:14px"><b>انتهت تجربتك المجانية</b><p style="font-size:13px;color:#94a3b8">سجّل الآن للمتابعة مجاناً - 10 إعلانات يومياً</p><button onclick="openLoginModal()" style="background:#a855f7;color:#fff;border:none;padding:11px 22px;border-radius:10px;font-weight:800;margin-top:8px">تسجيل الدخول مجاناً</button></div>
-<div id="loginModal" class="modal"><div class="modalBox"><h3>مرحباً بك في تاجر AI</h3><p style="font-size:13px;color:#94a3b8;margin:6px 0">سجّل الآن وابدأ مع تاجر AI - 10 إعلانات مجاناً يومياً - إعلانك الأول خلال 30 ثانية</p><div id="g_id_onload" data-client_id="" data-callback="onGoogleLogin" data-auto_prompt="false"></div><div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue" data-text="signin_with" data-size="large" data-logo_alignment="left" style="display:flex;justify-content:center;margin-top:10px"></div><button onclick="closeLoginModal()">إغلاق X</button></div></div>
+<div id="loginModal" class="modal"><div class="modalBox"><h3>مرحباً بك في تاجر AI</h3><p style="font-size:13px;color:#94a3b8;margin:6px 0">سجّل الآن وابدأ مع تاجر AI - 10 إعلانات مجاناً يومياً - إعلانك الأول خلال 30 ثانية</p><div id="g_id_onload" data-client_id="943446170068-r931vbq02vma0ev99173mu13jka15lsm.apps.googleusercontent.com" data-callback="onGoogleLogin" data-auto_prompt="false"></div><div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue" data-text="signin_with" data-size="large" data-logo_alignment="left" style="display:flex;justify-content:center;margin-top:10px"></div><button onclick="closeLoginModal()">إغلاق X</button></div></div>
 <div id="feedbackBox" class="modal"><div class="modalBox" style="text-align:right"><h3 style="text-align:center">😔 ليه ما عجبك الإعلان؟</h3><p style="font-size:13px;color:#94a3b8;text-align:center">اكتب لينا ملاحظتك - حنحسن ليك الإعلان الجاي</p><textarea id="feedbackText" placeholder="مثال: الإعلان طويل شديد - اللهجة ما مظبوطة - ما فيهو حماس..." style="width:100%;background:#0f1226;color:#fff;border:1px solid #333;border-radius:10px;padding:10px;min-height:90px;font-size:13.5px;margin-top:10px"></textarea><button onclick="submitFeedback()" style="background:#22c55e!important">إرسال الملاحظة ✅</button><button onclick="closeFeedback()" style="background:#333!important">تخطي</button></div></div>
 <footer>© Tajer AI 2026 - جميع الحقوق محفوظة<br>شروط الاستخدام - سياسة الخصوصية</footer>
 <div id="stickyBar" class="stickyBar"><b>جرّب تاجر AI مجاناً ✨</b><button onclick="showForm()">إنشاء إعلان - مجاناً</button></div>
@@ -203,6 +203,22 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 </script>
 <script>
 window.addEventListener('load', ()=>{ setTimeout(()=>{ if(typeof showSocialBarForce === 'function') showSocialBarForce('دخول الموقع - بعد 3 ثواني'); }, 3000); });
+</script>
+<script>
+// إصلاح Google - جيب client_id من Worker لو اتغير
+async function fixGoogleLogin(){
+  try{
+    const cfg = await fetch("/api/config").then(r=>r.json());
+    const clientId = cfg.googleClientId || "943446170068-r931vbq02vma0ev99173mu13jka15lsm.apps.googleusercontent.com";
+    if(!clientId) return;
+    const el = document.getElementById("g_id_onload");
+    if(el) el.setAttribute("data-client_id", clientId);
+    if(window.google && window.google.accounts && window.google.accounts.id && typeof window.onGoogleLogin === "function"){
+      window.google.accounts.id.initialize({ client_id: clientId, callback: window.onGoogleLogin });
+    }
+  }catch(e){ console.log("Google fix failed", e); }
+}
+window.addEventListener("load", ()=>{ setTimeout(fixGoogleLogin, 500); });
 </script>
 <script src="app.js"></script>
 </body>
