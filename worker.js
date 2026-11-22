@@ -231,8 +231,8 @@ async function generate(env, body){
   return { adText: adText.trim(), imagePrompt: imagePrompt.trim() };
 }
 
-// ===== KV - دوال المستخدم - KV بس =====
-async function saveUserToKV(env, user, ip){
+// ===== KV - دوال المستخدم - KV بس - تم إلغاء ربط IP بالحساب لأسباب أمنية =====
+async function saveUserToKV(env, user){
   if(!user || !user.email) return user;
   const key = `user:${user.email}`;
   let old = {};
@@ -246,7 +246,7 @@ async function saveUserToKV(env, user, ip){
     lastLogin: Date.now(),
   };
   await env.TAJER_KV.put(key, JSON.stringify(data));
-  if(ip) { try{ await env.TAJER_KV.put(`ip:${ip}`, user.email); }catch(e){} }
+  // ممنوع تماما حفظ ip:${ip} -> email - كان بيدخل أي جهاز بنفس الشبكة لحساب زول تاني
   return data;
 }
 async function getUserFromKV(env, email){
@@ -272,23 +272,22 @@ export default {
         const { credential } = await request.json();
         const payload = JSON.parse(b64Decode(credential.split('.')[1]));
         const userInput = { email: payload.email, name: payload.name, picture: payload.picture || '', pic: payload.picture || '' };
-        // KV بس - احفظ طوالي - حتى لو مافي IP
-        const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
-        const user = await saveUserToKV(env, userInput, ip);
+        // KV بس - احفظ طوالي - بدون ربط IP
+        const user = await saveUserToKV(env, userInput);
         const header = b64Encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
         const body = b64Encode(JSON.stringify({ ...user, exp: Date.now() + 7*24*3600*1000 }));
         const token = `${header}.${body}.sig`;
         return json({ token, user });
       }catch(e){ return json({ error: 'فشل التحقق من Google' }, 401); }
     }
-    // ===== جديد: جلب بيانات المستخدم من KV =====
+    // ===== جلب بيانات المستخدم من KV =====
     if(url.pathname === '/api/me' && request.method === 'GET'){
       const u = verifyToken(request);
       if(!u) return json({ error: 'يرجى تسجيل الدخول' }, 401);
       const user = await getUserFromKV(env, u.email) || u;
       return json({ user });
     }
-    // ===== جديد: تحديث الاسم + الصورة في KV =====
+    // ===== تحديث الاسم + الصورة في KV =====
     if(url.pathname === '/api/me/update' && request.method === 'POST'){
       const u = verifyToken(request);
       if(!u) return json({ error: 'يرجى تسجيل الدخول' }, 401);
@@ -300,23 +299,12 @@ export default {
         pic: b.pic || b.picture || old.pic || old.picture || '',
         picture: b.pic || b.picture || old.pic || old.picture || '',
       };
-      const saved = await saveUserToKV(env, updated, '');
+      const saved = await saveUserToKV(env, updated);
       return json({ user: saved });
     }
+    // ===== Auto-Login بـ IP اتلغى نهائيا - لأسباب أمنية =====
     if(url.pathname === '/api/auto-login' && request.method === 'GET'){
-      try{
-        const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
-        if(!ip) return json({ user: null });
-        const email = await env.TAJER_KV.get(`ip:${ip}`);
-        if(!email) return json({ user: null });
-        const saved = await env.TAJER_KV.get(`user:${email}`);
-        if(!saved) return json({ user: null });
-        const user = JSON.parse(saved);
-        const header = b64Encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-        const body = b64Encode(JSON.stringify({ ...user, exp: Date.now() + 7*24*3600*1000 }));
-        const token = `${header}.${body}.sig`;
-        return json({ token, user });
-      }catch(e){ return json({ user: null }); }
+      return json({ user: null });
     }
     if(url.pathname === '/api/quota'){
       const user = verifyToken(request);
@@ -345,7 +333,7 @@ export default {
       await env.TAJER_KV.put(key, JSON.stringify(filtered.slice(0, 50)));
       return json({ ok: true });
     }
-    // ===== جديد: حذف إعلان من KV =====
+    // ===== حذف إعلان من KV =====
     if(url.pathname === '/api/ads/delete' && request.method === 'POST'){
       const user = verifyToken(request);
       if(!user) return json({ error: 'يرجى تسجيل الدخول' }, 401);
@@ -356,7 +344,7 @@ export default {
       await env.TAJER_KV.put(key, JSON.stringify(filtered.slice(0, 50)));
       return json({ ok: true, ads: filtered });
     }
-    // ===== جديد: Feedback في KV =====
+    // ===== Feedback في KV =====
     if(url.pathname === '/api/feedback' && request.method === 'POST'){
       try{
         const b = await request.json();
