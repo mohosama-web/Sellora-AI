@@ -9,6 +9,7 @@ let currentAd = null;
 let _myAdsCache = [];
 // ===== Adsterra - Social Bar بس - Popunder اتشال نهائي =====
 // النظام: يبدأ بعد دخول الموقع أول مرة في اليوم بـ 3 ث - يقعد 10-30 ث - يختفي - بعد 60 ث يظهر جديد - لو قفلو يقيف 5 دقائق - حد اليوم 4 اعلانات مختلفة
+// النسخة دي بالمسح الكامل - عشان Adsterra يجيب اعلان جديد مختلف كل مرة
 let _socialBarTimer = null;
 let _socialBarHideTimer = null;
 let _socialBarShowing = false;
@@ -45,32 +46,57 @@ function _canShowNow(){
   return true;
 }
 
-// --- امسح القديم وحمّل سكربت جديد - عشان يجيب اعلان جديد مختلف ---
-function _loadNewSocialBar(){
+// --- امسح القديم كامل - سكربت + Iframe + Div - عشان يجيب اعلان جديد مختلف ---
+function _removeSocialBarEls(){
+  // 1. امسح السكربتات القديمة
   document.querySelectorAll('script[src*="bauval.org"]').forEach(s => s.remove());
-  document.querySelectorAll('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"]').forEach(e => e.remove());
+  // 2. امسح كل Iframes بتاعت Adsterra
+  document.querySelectorAll('iframe').forEach(f => {
+    try{
+      const src = f.src || '';
+      if(src.includes('bauval') || src.includes('adsterra') || src.includes('highperform') || src.includes('goat')) f.remove();
+    }catch(e){ try{ f.remove(); }catch(err){} }
+  });
+  // 3. امسح الـ Divs اللي Adsterra بيعملها - بتكون fixed في الأسفل / الجوانب
+  document.querySelectorAll('div[style*="position: fixed"], div[style*="position:fixed"]').forEach(d => {
+    try{
+      const html = d.innerHTML || '';
+      if(html.includes('bauval') || html.includes('adsterra') || d.querySelector('iframe')) d.remove();
+    }catch(e){}
+  });
+  // 4. امسح أي عنصر فيهو bauval في id او class
+  document.querySelectorAll('[id*="bauval"], [class*="bauval"]').forEach(e => e.remove());
+}
+
+// --- حمّل سكربت جديد - بعد ما مسحنا القديم ---
+function _loadNewSocialBar(){
+  _removeSocialBarEls();
   const s = document.createElement('script');
   s.setAttribute('data-cfasync','false');
   s.src = 'https://bauval.org/14/f7bb06d45366cb88433539a59c476da0?cb=' + Date.now() + '_' + Math.floor(Math.random()*1000000000);
   document.body.appendChild(s);
-}
-function _removeSocialBarEls(){
-  document.querySelectorAll('iframe[src*="bauval"], [id*="bauval"], [class*="bauval"]').forEach(e => e.remove());
+  // زيد العداد بعد ما السكربت يحمل فعلا - مش قبل - عشان لو فشل ما يضيع عليك واحد من الـ 4
+  s.onload = () => { _incSocialDaily(); };
+  s.onerror = () => { _socialBarShowing = false; };
 }
 
 // --- الدورة: اظهر 10-30 ث - اخفي - بعد 60 ث اظهر جديد ---
 function _showSocialBarCycle(){
-  if(!_isLoggedInForAds()) return;
+  if(!_isLoggedInForAds()){
+    // لو لسه ما سجل دخول - حاول تاني بعد 5 ثواني - ما تموت
+    clearTimeout(_socialBarTimer);
+    _socialBarTimer = setTimeout(()=> _showSocialBarCycle(), 5000);
+    return;
+  }
   if(_socialBarShowing) return;
   if(!_canShowDaily()) return; // وصل 4 اليوم - قف لحد بكرة
   if(!_canShowNow()){
     clearTimeout(_socialBarTimer);
-    _socialBarTimer = setTimeout(()=> _showSocialBarCycle(), 5 * 60 * 1000);
+    _socialBarTimer = setTimeout(()=> _showSocialBarCycle(), 60 * 1000);
     return;
   }
   _socialBarShowing = true;
   _loadNewSocialBar();
-  _incSocialDaily();
 
   const showTime = 10000 + Math.floor(Math.random() * 20000); // 10 - 30 ثانية
   clearTimeout(_socialBarHideTimer);
@@ -495,4 +521,4 @@ async function shareDetailAd(btn){
   if(navigator.share){ try{ await navigator.share({ title: currentAd.product || 'إعلان من Tajer AI', text: txt }); return; }catch(e){ if(e.name === 'AbortError') return; } }
   try{ await navigator.clipboard.writeText(txt); }catch(e){}
   window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
-  }
+      }
