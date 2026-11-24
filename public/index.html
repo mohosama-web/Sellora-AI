@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tajer AI - صمم إعلانك بالذكاء الاصطناعي</title>
+<title>Sellora AI - صمم إعلانك بالذكاء الاصطناعي</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -66,9 +66,7 @@ section img{min-height:180px;aspect-ratio:16/9;object-fit:cover}
 button, .bigBtn, .createBtn, .heroBtn{padding:7px 14px!important;font-size:13px!important;border-radius:20px!important;box-shadow:0 0 12px rgba(168,85,247,.6)!important;transition:.2s}
 button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!important}
 .btn-delete{background:linear-gradient(45deg,#ff3b3b,#ff6b6b)!important;color:#fff!important;width:38px!important;height:38px!important;padding:0!important;font-size:18px!important;border-radius:50%!important;box-shadow:0 0 12px rgba(255,59,59,.7)!important}
-.select-box{width:26px;height:26px;border:2px solid #00ff88;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0;background:#0f1226}
-.select-box.checked{background:#22c55e;border-color:#22c55e;box-shadow:0 0 10px rgba(34,197,94,.9)}
-.adItem.selected{border:2px solid #22c55e!important;box-shadow:0 0 12px rgba(34,197,94,.4)}
+.adItem.selected{border:2px solid #22c55e!important;background:rgba(34,197,94,.15)!important;box-shadow:0 0 12px rgba(34,197,94,.4)}
 #bulkBar{display:none;position:sticky;top:60px;z-index:90;background:#ef4444;padding:10px 14px;border-radius:12px;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 #bulkBar button{background:#fff!important;color:#ef4444!important;box-shadow:none!important}
 .iconCopyBtn.copied svg{stroke:#22c55e}
@@ -78,19 +76,21 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 .shareBtn:active{transform:scale(.92)}
 .shareBtn.copied svg{stroke:#22c55e}
 .smallGreenBtn.shareGreen svg{opacity:.9}
+.ad-label{font-size:11px;color:#94a3b8;text-align:center;padding:4px 0 2px;background:transparent}
+#result.generating .result-actions{display:none!important}
 </style>
 </head>
 <body>
 <header>
-<div style="display:flex;align-items:center;gap:7px"><div class="logoCircle"><img src="/images/logo.png" alt="Tajer AI"></div><b>Tajer <span>AI</span></b></div>
+<div style="display:flex;align-items:center;gap:7px"><div class="logoCircle"><img src="/images/logo.png" alt="Sellora AI"></div><b>Sellora <span>AI</span></b></div>
 <div style="display:flex;align-items:center;gap:8px"><img id="headerAvatar" class="avatar" style="display:none"><button id="menuBtnTop" onclick="toggleMenu()">☰</button><button id="loginBtnTop" onclick="openLoginModal()">تسجيل الدخول</button></div>
 </header>
 <div id="drawer" onclick="if(event.target.id=='drawer') toggleMenu()"><div id="drawerBox">
 <div style="text-align:center"><img id="drawerAvatar" class="avatarBig" style="width:60px;height:60px"><b id="drawerName"></b><p id="drawerEmail" style="font-size:12px;color:#94a3b8"></p><button id="editProfileBtn" onclick="openEditProfile()" style="display:none;background:#7c3aed">✏️ تعديل بيانات الملف الشخصي</button></div>
 <button onclick="goHome()">🏠 الرئيسية</button>
 <button onclick="goMyAds()">📋 إعلاناتي السابقة</button>
-<button onclick="window.open('https://wa.me/249969718544?text=مرحبا - أرغب في الاستفسار عن Tajer AI','_blank')">💬 تواصل معنا</button>
-<button onclick="window.open('https://wa.me/249969718544?text=مرحبا - أحتاج إلى الدعم في Tajer AI','_blank')">🛠️ الدعم</button>
+<button onclick="window.open('https://wa.me/249969718544?text=مرحبا - أرغب في الاستفسار عن Sellora AI','_blank')">💬 تواصل معنا</button>
+<button onclick="window.open('https://wa.me/249969718544?text=مرحبا - أحتاج إلى الدعم في Sellora AI','_blank')">🛠️ الدعم</button>
 <button id="sideLoginBtn" onclick="toggleMenuOff();openLoginModal()" style="background:#22c55e">🔑 تسجيل الدخول</button>
 <button id="sideLogoutBtn" onclick="logout()" style="display:none">🚪 تسجيل الخروج</button>
 <button onclick="toggleMenu()" style="background:#333">✕ إغلاق القائمة</button>
@@ -107,15 +107,15 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 <div class="card"><div class="ico">⚡</div><b>خلال 30 ثانية</b><p>اكتب فكرتك، اختر الإعدادات، واحصل على إعلان كامل دون انتظار مصمم أو كاتب محتوى.</p></div></section>
 <section><span class="pill">🔥 قصة حقيقية</span><h2>أميرة - تضاعفت مبيعاتها 3 مرات - وأنت ما زلت تشاهد؟</h2>
 <img src="/images/amira.jpg" style="width:100%;border-radius:14px" alt="أميرة" loading="eager">
-<div class="card" style="margin-top:10px"><p>كانت أميرة تبيع 10 طلبات يومياً. بعد Tajer AI أصبحت تبيع 90 طلباً. كل يوم تنتظر فيه، منافسك يبيع 3 إعلانات ويستحوذ على عملائك. ⚠️ كل يوم بدون تاجر AI = 10 عملاء يذهبون لمنافسك.</p><p style="color:#fde68a;font-weight:700">انضم إلى 5,214 تاجراً - قبل أن يسبقك منافسك</p></div></section>
+<div class="card" style="margin-top:10px"><p>كانت أميرة تبيع 10 طلبات يومياً. بعد Sellora AI أصبحت تبيع 90 طلباً. كل يوم تنتظر فيه، منافسك يبيع 3 إعلانات ويستحوذ على عملائك. ⚠️ كل يوم بدون Sellora AI = 10 عملاء يذهبون لمنافسك.</p><p style="color:#fde68a;font-weight:700">انضم إلى 5,214 تاجراً - قبل أن يسبقك منافسك</p></div></section>
 <section><span class="pill">📦 من المخزن</span><h2>الطلبات أصبحت متواصلة - من الصباح حتى المساء</h2>
 <img src="/images/store.jpg" style="width:100%;border-radius:14px" alt="مخزن" loading="eager">
-<div class="card" style="margin-top:10px"><p>الآن الطلبات لا تتوقف. من الصباح حتى المساء، والعملاء يطلبون بأنفسهم. هذا ما يفعله إعلان واحد مكتوب بشكل صحيح. يجهز لك تاجر AI إعلاناتك، وأنت فقط تركز على التغليف والتوصيل.</p></div></section>
-<section><span class="pill">⚖️ المقارنة</span><h2>قبل تاجر AI - وبعد تاجر AI</h2>
-<div class="before bad">❌ قبل تاجر AI<br>إعلان بارد - 3 تعليقات - إهدار أموال - مبيعات متقطعة</div>
-<div class="before good">✅ بعد تاجر AI<br>إعلان حماسي - تعليقات كثيرة - عملاء جدد يومياً - مبيعات 3X خلال 30 ثانية - مبيعات 3X</div>
+<div class="card" style="margin-top:10px"><p>الآن الطلبات لا تتوقف. من الصباح حتى المساء، والعملاء يطلبون بأنفسهم. هذا ما يفعله إعلان واحد مكتوب بشكل صحيح. يجهز لك Sellora AI إعلاناتك، وأنت فقط تركز على التغليف والتوصيل.</p></div></section>
+<section><span class="pill">⚖️ المقارنة</span><h2>قبل Sellora AI - وبعد Sellora AI</h2>
+<div class="before bad">❌ قبل Sellora AI<br>إعلان بارد - 3 تعليقات - إهدار أموال - مبيعات متقطعة</div>
+<div class="before good">✅ بعد Sellora AI<br>إعلان حماسي - تعليقات كثيرة - عملاء جدد يومياً - مبيعات 3X خلال 30 ثانية - مبيعات 3X</div>
 <p style="text-align:center;font-size:13px">أنت الآن: قبل أم بعد؟</p></section>
-<section><span class="pill">كيف يعمل؟</span><h2>كيف يعمل Tajer AI ؟</h2>
+<section><span class="pill">كيف يعمل؟</span><h2>كيف يعمل Sellora AI ؟</h2>
 <div class="card"><b>1. اكتب اسم المنتج ووصفه مختصراً</b><p>اكتب ما تبيعه، ومميزاته في سطرين.</p></div>
 <div class="card"><b>2. اختر الدولة واللهجة والمنصة</b><p>السودان، السعودية، مصر، الإمارات - اللهجة التي يتكلم بها عميلك.</p></div>
 <div class="card"><b>3. احصل على إعلان كامل + وصف الصورة</b><p>انسخ الإعلان، وانشره في فيسبوك، واتساب، تيك توك، انستقرام.</p></div></section>
@@ -124,10 +124,10 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 <div class="testi"><img src="/images/ahmed.jpg" loading="eager"><div><b>أحمد - متجر إلكترونيات</b><small>⭐⭐⭐⭐⭐</small><p>"أول إعلان حقق 7 عملاء في اليوم نفسه"</p></div></div>
 <div class="testi"><img src="/images/noura.jpg" loading="eager"><div><b>نورة - مستحضرات تجميل</b><small>⭐⭐⭐⭐⭐</small><p>"أصبح العملاء يأتون إلي بأنفسهم - لم أعد أبحث عنهم"</p></div></div>
 <div class="testi"><img src="/images/mohammed.jpg" loading="eager"><div><b>محمد - متجر ملابس</b><small>⭐⭐⭐⭐⭐</small><p>"لولا التسجيل لاستحوذ منافسي على جميع عملائي"</p></div></div>
-<div class="testi" style="border-color:#22c55e;background:#14532d22"><img src="/images/youssef.jpg" loading="eager"><div><b>يوسف - مطور تطبيق</b><small>⭐⭐⭐⭐⭐ قصة حقيقية</small><p>"عملت إعلاناً بتاجر AI، بعد أسبوع وصل موقعي إلى <span class="num">12,453 مستخدم نشط يومياً</span>. وندمت أني تأخرت في التسجيل، لو سجلت مبكراً لوصلت أسرع."</p></div></div>
+<div class="testi" style="border-color:#22c55e;background:#14532d22"><img src="/images/youssef.jpg" loading="eager"><div><b>يوسف - مطور تطبيق</b><small>⭐⭐⭐⭐⭐ قصة حقيقية</small><p>"عملت إعلاناً بـ Sellora AI، بعد أسبوع وصل موقعي إلى <span class="num">12,453 مستخدم نشط يومياً</span>. وندمت أني تأخرت في التسجيل، لو سجلت مبكراً لوصلت أسرع."</p></div></div>
 </section>
 <section><div class="createAdTrigger"><h2>هل أنت جاهز للبدء؟</h2><p class="sub">اضغط الزر - ستظهر لك القائمة</p><button onclick="showForm()" style="width:100%;background:#22c55e;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:800">➕ إنشاء إعلان جديد</button></div></section>
-<div class="fear"><h2>⚠️ إن لم تسجّل الآن - ستندم غداً</h2><p style="font-size:13px;margin-top:6px">منافسك الآن ينشر إعلانه عبر تاجر AI ويستحوذ على عملائك - وأنت ما زلت تشاهد. إعلانك الأول هدية - مجاناً - بدون بطاقة - خلال 30 ثانية.</p><button onclick="openLoginModal()">🚀 سجّل الآن مجاناً - قبل فوات الأوان</button><p style="font-size:12px">العرض المجاني ينتهي الليلة - سجّل أكثر من 5,214 تاجراً - تبقى 3 مقاعد</p></div>
+<div class="fear"><h2>⚠️ إن لم تسجّل الآن - ستندم غداً</h2><p style="font-size:13px;margin-top:6px">منافسك الآن ينشر إعلانه عبر Sellora AI ويستحوذ على عملائك - وأنت ما زلت تشاهد. إعلانك الأول هدية - مجاناً - بدون بطاقة - خلال 30 ثانية.</p><button onclick="openLoginModal()">🚀 سجّل الآن مجاناً - قبل فوات الأوان</button><p style="font-size:12px">العرض المجاني ينتهي الليلة - سجّل أكثر من 5,214 تاجراً - تبقى 3 مقاعد</p></div>
 </div>
 <div id="view-create-account" class="view"><section><button class="backBtn" onclick="goLanding()">← رجوع</button><div class="formWrap" style="text-align:center"><h2>إنشاء حسابك</h2><p class="sub">أكمل بياناتك للمتابعة</p><img id="accAvatar" class="avatarBig" src=""><label style="display:block;text-align:right;font-size:13px;font-weight:700">اسمك - يمكنك تغييره</label><input id="accName" class="input"><label style="display:block;text-align:right;font-size:13px;font-weight:700">البريد الإلكتروني</label><input id="accEmail" class="input" readonly style="color:#94a3b8"><label style="display:block;text-align:right;font-size:13px;font-weight:700">صورة الملف الشخصي - اختياري</label><input type="file" id="accPicInput" accept="image/*" class="input" onchange="previewPic(event)"><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="finishCreateAccount()">إنشاء حساب ✅</button><p style="font-size:12px;color:#94a3b8;margin-top:8px">إذا لم تضف صورة - سنستخدم صورة افتراضية</p></div></section></div>
 <div id="view-home" class="view"><section><h2 style="text-align:right" id="welcomeText">مرحباً بك 👋</h2><p id="quotaText" style="font-size:13px;color:#a5b4fc;margin:6px 0">🔢 المتبقي لك ... إعلان</p><p style="font-size:13px;color:#cbd5e1">هل أنت جاهز للبيع اليوم؟ أنشئ إعلانك الجديد خلال 30 ثانية، أو ارجع إلى إعلاناتك السابقة وانسخها وانشرها.</p><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="goCreateAd()">➕ إنشاء إعلان جديد</button><button class="bigBtn" style="background:#7c3aed;color:#fff" onclick="goMyAds()">📋 إعلاناتي السابقة ←</button></section></div>
@@ -143,7 +143,6 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 <label>8. التوصيل (اختياري)</label><input id="delivery" placeholder="مثال: توصيل مجاني داخل الرياض فقط">
 <label>9. طريقة الاستلام (اختياري)</label><select id="pickupMethod"><option value="">اختر</option><option>توصيل للمنزل</option><option>استلام من المتجر</option><option>شحن</option></select>
 <label>10. رقم الواتساب (اختياري)</label><input id="whatsapp" placeholder="مثال: 00966500000000">
-<label>11. لغة الإعلان *</label><select id="lang"><option value="">اختر لغة الإعلان *</option><option>عربي</option><option>إنجليزي</option><option>عربي + إنجليزي</option></select>
 <label>12. طول الإعلان *</label><select id="length"><option value="">اختر طول الإعلان *</option><option>قصير</option><option>متوسط</option><option>طويل</option></select>
 <label>13. المنصة (اختياري)</label><select id="platform"><option>جميع المنصات</option><option>فيسبوك</option><option>واتساب</option><option>تيك توك</option><option>انستقرام</option></select>
 <label>14. اسم المتجر / الخدمة / الموقع / التطبيق *</label><input id="shopName" placeholder="مثال: متجر النور">
@@ -156,11 +155,15 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 <button type="submit" id="createBtn" class="createBtn">✨ توليد الإعلان</button>
 <button type="button" id="recreateBtn" style="display:none;width:100%;background:#7c3aed;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:800;margin-top:8px" onclick="submitRecreate()">🔁 إعادة إنشاء بصيغة أخرى</button>
 </form>
+<div id="hilltopWrap" style="display:none;margin:10px 0">
+  <div class="ad-label">إعلان</div>
+  <div id="hilltopContainer"></div>
+</div>
 <div id="result" style="display:none"><textarea id="adText" readonly></textarea>
 <div class="copyRow"><button class="iconCopyBtn" onclick="copyText('adText', this)" title="نسخ الإعلان"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg></button><button class="shareBtn" onclick="shareText('adText', this)" title="مشاركة الإعلان"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></button><button class="rateBtn" onclick="rateAd(1,this)" title="أعجبني"><svg viewBox="0 0 24 24"><path d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3zm0 12h9.5a2 2 0 0 0 1.8-1.2l2.2-5.5A2 2 0 0 0 18.6 13H14l.8-3.6A2 2 0 0 0 12.8 7L9 10.5V10"/></svg></button><button class="rateBtn" onclick="rateAd(-1,this)" title="لم يعجبني"><svg viewBox="0 0 24 24"><path d="M7 14V2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3zm0-12h9.5a2 2 0 0 1 1.8 1.2l2.2 5.5A2 2 0 0 1 18.6 11H14l.8 3.6A2 2 0 0 1 12.8 17L9 13.5V14"/></svg></button></div>
 <textarea id="imagePrompt" readonly style="min-height:80px"></textarea>
 <div class="copyRow"><button class="iconCopyBtn" onclick="copyText('imagePrompt', this)" title="نسخ وصف الصورة"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><rect x="3" y="3" width="12" height="12" rx="2"/></svg></button><button class="shareBtn" onclick="shareText('imagePrompt', this)" title="مشاركة وصف الصورة"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></button><button class="rateBtn" onclick="rateAd(1,this)" title="أعجبني"><svg viewBox="0 0 24 24"><path d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3zm0 12h9.5a2 2 0 0 0 1.8-1.2l2.2-5.5A2 2 0 0 0 18.6 13H14l.8-3.6A2 2 0 0 0 12.8 7L9 10.5V10"/></svg></button><button class="rateBtn" onclick="rateAd(-1,this)" title="لم يعجبني"><svg viewBox="0 0 24 24"><path d="M7 14V2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3zm0-12h9.5a2 2 0 0 1 1.8 1.2l2.2 5.5A2 2 0 0 1 18.6 11H14l.8 3.6A2 2 0 0 1 12.8 17L9 13.5V14"/></svg></button></div>
-<button class="bigBtn" style="background:#22c55e;color:#fff" onclick="goCreateAd()">➕ إنشاء إعلان جديد</button><button class="bigBtn" style="background:#7c3aed;color:#fff" onclick="goMyAds()">عرض في إعلاناتي ←</button></div>
+<div class="result-actions"><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="goCreateAd()">➕ إنشاء إعلان جديد</button><button class="bigBtn" style="background:#7c3aed;color:#fff" onclick="goMyAds()">عرض في إعلاناتي ←</button></div></div>
 <div id="history" style="display:none"></div></div></section></div>
 <div id="view-edit-profile" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><div class="formWrap" style="text-align:center"><h2>تعديل بيانات الملف الشخصي</h2><p class="sub">عدّل اسمك أو صورتك ثم اضغط حفظ</p><img id="editAvatar" class="avatarBig" src=""><label style="display:block;text-align:right;font-size:13px;font-weight:700">اسمك</label><input id="editName" class="input"><label style="display:block;text-align:right;font-size:13px;font-weight:700">البريد الإلكتروني</label><input id="editEmail" class="input" readonly style="color:#94a3b8"><label style="display:block;text-align:right;font-size:13px;font-weight:700">صورة الملف الشخصي</label><input type="file" id="editPicInput" accept="image/*" class="input" onchange="previewEditPic(event)"><button class="bigBtn" style="background:#22c55e;color:#fff" onclick="saveProfileEdit()">حفظ التعديل ✅</button></div></section></div>
 <div id="view-my-ads" class="view"><section><button class="backBtn" onclick="goHome()">← رجوع</button><h2 style="text-align:right">📋 إعلاناتي السابقة</h2><p class="sub">اضغط على اسم الإعلان لعرضه كاملاً</p><div id="bulkBar"><span id="selectedCount">0 محدد</span><button onclick="deleteSelectedAds()">حذف 🗑️</button></div><div id="myAdsList"></div></section></div>
@@ -184,14 +187,14 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 </section></div>
 <div id="tryArea" style="display:none"></div><div id="appBox" style="display:none"></div><div id="loginRequiredBox" style="display:none"></div>
 <div id="trialDoneBox" style="display:none;text-align:center;padding:16px;background:#1a1f3a;margin:16px;border-radius:14px"><b>انتهت تجربتك المجانية</b><p style="font-size:13px;color:#94a3b8">سجّل الآن للمتابعة مجاناً - 10 إعلانات يومياً</p><button onclick="openLoginModal()" style="background:#a855f7;color:#fff;border:none;padding:11px 22px;border-radius:10px;font-weight:800;margin-top:8px">تسجيل الدخول مجاناً</button></div>
-<div id="loginModal" class="modal"><div class="modalBox"><h3>مرحباً بك في تاجر AI</h3><p style="font-size:13px;color:#94a3b8;margin:6px 0">سجّل الآن وابدأ مع تاجر AI - 10 إعلانات مجاناً يومياً - إعلانك الأول خلال 30 ثانية</p><div id="g_id_onload" data-client_id="943446170068-r931vbq02vma0ev99173mu13jka15lsm.apps.googleusercontent.com" data-callback="onGoogleLogin" data-auto_prompt="false"></div><div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue" data-text="signin_with" data-size="large" data-logo_alignment="left" style="display:flex;justify-content:center;margin-top:10px"></div><button onclick="closeLoginModal()">إغلاق X</button></div></div>
+<div id="loginModal" class="modal"><div class="modalBox"><h3>مرحباً بك في Sellora AI</h3><p style="font-size:13px;color:#94a3b8;margin:6px 0">سجّل الآن وابدأ مع Sellora AI - 10 إعلانات مجاناً يومياً - إعلانك الأول خلال 30 ثانية</p><div id="g_id_onload" data-client_id="943446170068-r931vbq02vma0ev99173mu13jka15lsm.apps.googleusercontent.com" data-callback="onGoogleLogin" data-auto_prompt="false"></div><div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue" data-text="signin_with" data-size="large" data-logo_alignment="left" style="display:flex;justify-content:center;margin-top:10px"></div><button onclick="closeLoginModal()">إغلاق X</button></div></div>
 <div id="feedbackBox" class="modal"><div class="modalBox" style="text-align:right"><h3 style="text-align:center">😔 ليه ما عجبك الإعلان؟</h3><p style="font-size:13px;color:#94a3b8;text-align:center">اكتب لينا ملاحظتك - حنحسن ليك الإعلان الجاي</p><textarea id="feedbackText" placeholder="مثال: الإعلان طويل شديد - اللهجة ما مظبوطة - ما فيهو حماس..." style="width:100%;background:#0f1226;color:#fff;border:1px solid #333;border-radius:10px;padding:10px;min-height:90px;font-size:13.5px;margin-top:10px"></textarea><button onclick="submitFeedback()" style="background:#22c55e!important">إرسال الملاحظة ✅</button><button onclick="closeFeedback()" style="background:#333!important">تخطي</button></div></div>
-<footer>© Tajer AI 2026 - جميع الحقوق محفوظة<br>شروط الاستخدام - سياسة الخصوصية</footer>
-<div id="stickyBar" class="stickyBar"><b>جرّب تاجر AI مجاناً ✨</b><button onclick="showForm()">إنشاء إعلان - مجاناً</button></div>
+<footer>© Sellora AI 2026 - جميع الحقوق محفوظة<br>شروط الاستخدام - سياسة الخصوصية</footer>
+<div id="stickyBar" class="stickyBar"><b>جرّب Sellora AI مجاناً ✨</b><button onclick="showForm()">إنشاء إعلان - مجاناً</button></div>
 <script>
 (function(){
   try{
-    var token = localStorage.getItem('token') || localStorage.getItem('tajer_token') || localStorage.getItem('jwt');
+    var token = localStorage.getItem('token') || localStorage.getItem('sellora_token') || localStorage.getItem('tajer_token') || localStorage.getItem('jwt');
     var trialMsg = document.getElementById('trialMsg');
     var trialDone = document.getElementById('trialDoneBox');
     if(token){
@@ -205,7 +208,6 @@ button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!import
 window.addEventListener('load', ()=>{ setTimeout(()=>{ if(typeof showSocialBarForce === 'function') showSocialBarForce('دخول الموقع - بعد 3 ثواني'); }, 3000); });
 </script>
 <script>
-// إصلاح Google - جيب client_id من Worker لو اتغير
 async function fixGoogleLogin(){
   try{
     const cfg = await fetch("/api/config").then(r=>r.json());
