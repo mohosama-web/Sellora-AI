@@ -800,3 +800,4 @@ async function shareDetailAd(btn) {
   try { await navigator.clipboard.writeText(txt); } catch (e) {}
   window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
   }
+// redeploy
