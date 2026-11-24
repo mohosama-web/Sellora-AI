@@ -1,4 +1,9 @@
-// تاجر AI - Cloudflare Worker - 12 مفتاح - Groq 27B + Gemma 4 31B - KV بس
+// Sellora AI - Cloudflare Worker - API فقط - بدون Assets - بدون توزيع
+// Pages بيخدم الموقع - Worker بيخدم /api/* بس
+// 12 مفتاح - Groq 27B + Gemma 4 31B
+// المستخدمين + العداد في KV - الإعلانات في D1
+// D1 ID: ccd15217-008f-4b4b-b5d1-e781e70558c8 - database_name: sellora-db - binding: SELLORA_DB
+
 const INSTRUCTION_GROQ_QWEN = `
 أنت كاتب إعلانات محترف.
 باللهجة التي يطلبها المستخدم، بطريقة طبيعية مريحة.
@@ -184,13 +189,13 @@ function validateRequiredServer(b){
   if(!b.country || !String(b.country).trim()) return 'الخانة 3 - الدولة - إجبارية';
   if(!b.dialect || !String(b.dialect).trim()) return 'الخانة 4 - اللهجة - إجبارية';
   if(!b.category || !String(b.category).trim()) return 'الخانة 6 - التصنيف - إجبارية';
-  if(!b.lang || !String(b.lang).trim()) return 'الخانة 11 - لغة الإعلان - إجبارية';
+  // فورم اللغة اتمسح - اللغة ثابتة عربي - ما بنتحقق من lang
   if(!b.length || !String(b.length).trim()) return 'الخانة 12 - طول الإعلان - إجبارية';
   if(!b.shopName || !String(b.shopName).trim()) return 'الخانة 14 - اسم المتجر - إجبارية';
   return null;
 }
 function buildUserData(b){
-  return `البيانات - 20 خانة:
+  return `البيانات:
 1. اسم المنتج / الخدمة / الموقع / التطبيق: ${b.product}
 2. وصف / مميزات: ${b.productFeatures || 'غير محدد'}
 3. الدولة: ${b.country || 'غير محدد'}
@@ -201,7 +206,7 @@ function buildUserData(b){
 8. التوصيل: ${b.delivery || 'غير محدد'}
 9. طريقة الاستلام: ${b.pickupMethod || 'غير محدد'}
 10. رقم واتساب: ${b.whatsapp || 'غير محدد'}
-11. لغة الإعلان: ${b.lang || 'عربي'}
+11. لغة الإعلان: عربي
 12. طول الإعلان: ${b.length || 'تلقائي'}
 13. المنصة التي سينشر فيها الإعلان: ${b.platform || 'جميع المنصات'}
 14. اسم المتجر / الخدمة / الموقع / التطبيق: ${b.shopName || 'غير محدد'}
@@ -214,7 +219,7 @@ function buildUserData(b){
 }
 function buildPrompt1(b){
   return `${buildUserData(b)}
-المطلوب: اكتب إعلانا واحدا فقط، باللغة: ${b.lang || 'عربي'}، وباللهجة: ${b.dialect || 'فصحى'}، وبالنبرة: ${b.tone || 'حماسية'}، وبالطول: ${b.length || 'تلقائي'}، ومناسبا للمنصة: ${b.platform || 'جميع المنصات'}. أعد الإعلان فقط.`;
+المطلوب: اكتب إعلانا واحدا فقط، باللغة: عربي، وباللهجة: ${b.dialect || 'فصحى'}، وبالنبرة: ${b.tone || 'حماسية'}، وبالطول: ${b.length || 'تلقائي'}، ومناسبا للمنصة: ${b.platform || 'جميع المنصات'}. أعد الإعلان فقط.`;
 }
 function buildPrompt2(b){
   return `${buildUserData(b)}
@@ -231,7 +236,7 @@ async function generate(env, body){
   return { adText: adText.trim(), imagePrompt: imagePrompt.trim() };
 }
 
-// ===== KV - دوال المستخدم - KV بس - تم إلغاء ربط IP بالحساب لأسباب أمنية =====
+// ===== KV - المستخدمين + العداد فقط =====
 async function saveUserToKV(env, user){
   if(!user || !user.email) return user;
   const key = `user:${user.email}`;
@@ -246,7 +251,6 @@ async function saveUserToKV(env, user){
     lastLogin: Date.now(),
   };
   await env.TAJER_KV.put(key, JSON.stringify(data));
-  // ممنوع تماما حفظ ip:${ip} -> email - كان بيدخل أي جهاز بنفس الشبكة لحساب زول تاني
   return data;
 }
 async function getUserFromKV(env, email){
@@ -258,21 +262,38 @@ async function getUserFromKV(env, email){
   }catch(e){ return null; }
 }
 
+// ===== D1 - الإعلانات فقط =====
+async function saveAdToD1(env, email, product, adText, imagePrompt, payload){
+  const norm = (adText||'').trim().slice(0,120);
+  await env.SELLORA_DB.prepare("DELETE FROM ads WHERE email = ? AND substr(adText,1,120) = ?").bind(email, norm).run();
+  await env.SELLORA_DB.prepare("INSERT INTO ads (email, product, adText, imagePrompt, payload, date) VALUES (?,?,?,?,?,?)").bind(email, product||'إعلان', adText||'', imagePrompt||'', JSON.stringify(payload||{product:product||'إعلان'}), Date.now()).run();
+  await env.SELLORA_DB.prepare("DELETE FROM ads WHERE email = ? AND id NOT IN (SELECT id FROM ads WHERE email = ? ORDER BY date DESC LIMIT 50)").bind(email, email).run();
+}
+async function getAdsFromD1(env, email){
+  const { results } = await env.SELLORA_DB.prepare("SELECT product, adText, imagePrompt, payload, date FROM ads WHERE email = ? ORDER BY date DESC LIMIT 50").bind(email).all();
+  return (results||[]).map(r=>{ let payload={}; try{ payload=JSON.parse(r.payload||'{}'); }catch(e){} return { product:r.product, adText:r.adText, text:r.adText, imagePrompt:r.imagePrompt||'', payload, date:r.date }; });
+}
+
 export default {
   async fetch(request, env, ctx){
     const url = new URL(request.url);
     const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
     if(request.method === 'OPTIONS') return new Response(null, { headers: cors });
     const json = (obj, status=200) => Response.json(obj, { status, headers: cors });
+
+    // أي طلب مش /api/* بيرجع 404 - لأنو الموقع على Pages، مش هنا
+    if(!url.pathname.startsWith('/api/')){
+      return new Response('Not Found - API only', { status: 404, headers: cors });
+    }
+
     if(url.pathname === '/api/config' && request.method === 'GET'){
-      return json({ googleClientId: env.GOOGLE_CLIENT_ID || '', monetagZoneId: env.MONETAG_ZONE_ID || '', monetagPopunderZoneId: env.MONETAG_POPUNDER_ZONE_ID || '' });
+      return json({ googleClientId: env.GOOGLE_CLIENT_ID || '' });
     }
     if(url.pathname === '/api/auth/google' && request.method === 'POST'){
       try{
         const { credential } = await request.json();
         const payload = JSON.parse(b64Decode(credential.split('.')[1]));
         const userInput = { email: payload.email, name: payload.name, picture: payload.picture || '', pic: payload.picture || '' };
-        // KV بس - احفظ طوالي - بدون ربط IP
         const user = await saveUserToKV(env, userInput);
         const header = b64Encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
         const body = b64Encode(JSON.stringify({ ...user, exp: Date.now() + 7*24*3600*1000 }));
@@ -280,14 +301,12 @@ export default {
         return json({ token, user });
       }catch(e){ return json({ error: 'فشل التحقق من Google' }, 401); }
     }
-    // ===== جلب بيانات المستخدم من KV =====
     if(url.pathname === '/api/me' && request.method === 'GET'){
       const u = verifyToken(request);
       if(!u) return json({ error: 'يرجى تسجيل الدخول' }, 401);
       const user = await getUserFromKV(env, u.email) || u;
       return json({ user });
     }
-    // ===== تحديث الاسم + الصورة في KV =====
     if(url.pathname === '/api/me/update' && request.method === 'POST'){
       const u = verifyToken(request);
       if(!u) return json({ error: 'يرجى تسجيل الدخول' }, 401);
@@ -302,7 +321,6 @@ export default {
       const saved = await saveUserToKV(env, updated);
       return json({ user: saved });
     }
-    // ===== Auto-Login بـ IP اتلغى نهائيا - لأسباب أمنية =====
     if(url.pathname === '/api/auto-login' && request.method === 'GET'){
       return json({ user: null });
     }
@@ -317,34 +335,29 @@ export default {
     if(url.pathname === '/api/ads' && request.method === 'GET'){
       const user = verifyToken(request);
       if(!user) return json({ ads: [] });
-      const ads = JSON.parse(await env.TAJER_KV.get(`ads:${user.email}`) || '[]');
-      return json({ ads: ads.slice(0, 50) });
+      try{
+        const ads = await getAdsFromD1(env, user.email);
+        return json({ ads });
+      }catch(e){ return json({ ads: [] }); }
     }
     if(url.pathname === '/api/ads' && request.method === 'POST'){
       const user = verifyToken(request);
       if(!user) return json({ error: 'يرجى تسجيل الدخول أولاً للمتابعة.' }, 401);
       const ad = await request.json();
-      const key = `ads:${user.email}`;
-      const ads = JSON.parse(await env.TAJER_KV.get(key) || '[]');
-      // امنع التكرار - لو نفس النص موجود - ما تحفظو تاني
-      const norm = (ad.adText||ad.text||'').trim().slice(0,120);
-      const filtered = ads.filter(a => (a.adText||a.text||'').trim().slice(0,120) !== norm);
-      filtered.unshift({ ...ad, date: Date.now() });
-      await env.TAJER_KV.put(key, JSON.stringify(filtered.slice(0, 50)));
-      return json({ ok: true });
+      try{
+        await saveAdToD1(env, user.email, ad.product, ad.adText||ad.text, ad.imagePrompt, ad.payload);
+        return json({ ok: true });
+      }catch(e){ return json({ ok: false }, 500); }
     }
-    // ===== حذف إعلان من KV =====
     if(url.pathname === '/api/ads/delete' && request.method === 'POST'){
       const user = verifyToken(request);
       if(!user) return json({ error: 'يرجى تسجيل الدخول' }, 401);
       const { date } = await request.json();
-      const key = `ads:${user.email}`;
-      const ads = JSON.parse(await env.TAJER_KV.get(key) || '[]');
-      const filtered = ads.filter(a => String(a.date) !== String(date));
-      await env.TAJER_KV.put(key, JSON.stringify(filtered.slice(0, 50)));
-      return json({ ok: true, ads: filtered });
+      try{
+        await env.SELLORA_DB.prepare("DELETE FROM ads WHERE email = ? AND date = ?").bind(user.email, Number(date)).run();
+        return json({ ok: true });
+      }catch(e){ return json({ ok: false }, 500); }
     }
-    // ===== Feedback في KV =====
     if(url.pathname === '/api/feedback' && request.method === 'POST'){
       try{
         const b = await request.json();
@@ -374,30 +387,10 @@ export default {
       try{
         const out = await generate(env, body);
         await env.TAJER_KV.put(key, String(count + 1), { expirationTtl: 86400 });
-        try{
-          const adsKey = `ads:${user.email}`;
-          const ads = JSON.parse(await env.TAJER_KV.get(adsKey) || '[]');
-          const norm = out.adText.trim().slice(0,120);
-          const filtered = ads.filter(a => (a.adText||a.text||'').trim().slice(0,120) !== norm);
-          filtered.unshift({ product: body.product, adText: out.adText, text: out.adText, imagePrompt: out.imagePrompt, payload: body, date: Date.now() });
-          await env.TAJER_KV.put(adsKey, JSON.stringify(filtered.slice(0, 50)));
-        }catch(e){}
+        try{ await saveAdToD1(env, user.email, body.product, out.adText, out.imagePrompt, body); }catch(e){}
         return json(out);
       }catch(e){ return json({ error: 'حدثت مشكلة في توليد الإعلان - يرجى المحاولة مرة أخرى' }, 500); }
     }
-    if(!url.pathname.startsWith('/api/')){
-      if(env.ASSETS){
-        try{
-          const assetRes = await env.ASSETS.fetch(request);
-          if(assetRes.status !== 404) return assetRes;
-          const indexReq = new Request(new URL('/index.html', request.url), request);
-          return await env.ASSETS.fetch(indexReq);
-        }catch(e){
-          return new Response('Assets not configured - check wrangler.toml [assets]', { status: 500 });
-        }
-      }
-      return new Response('Not Found - Assets not configured', { status: 404 });
-    }
-    return new Response('Not Found', { status: 404 });
+    return new Response('Not Found', { status: 404, headers: cors });
   }
 };
