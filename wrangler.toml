@@ -1,4 +1,4 @@
-name = "tajer-ai"
+name = "sellora-ai"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
@@ -6,15 +6,14 @@ compatibility_date = "2024-01-01"
 binding = "TAJER_KV"
 id = "87eb55cc6ef6414eb70fc9846650de27"
 
+[[d1_databases]]
+binding = "SELLORA_DB"
+database_name = "sellora-db"
+database_id = "ccd15217-008f-4b4b-b5d1-e781e70558c8"
+
 [vars]
 GROQ_MODEL = "qwen/qwen3.8-27b"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GOOGLE_STUDIO_MODEL = "gemma-4-31b-it"
 GOOGLE_STUDIO_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 GOOGLE_CLIENT_ID = "943446170068-r931vbq02vma0ev99173mu13jka15lsm.apps.googleusercontent.com"
-
-# ===== إصلاح Not Found - ليعرض ملفات الموقع =====
-[assets]
-directory = "./public"
-binding = "ASSETS"
-run_worker_first = true
