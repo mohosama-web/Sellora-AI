@@ -62,7 +62,7 @@ button:disabled{opacity:.5}
 .login-card .g_id_signin>div{transform:scale(1.25);transform-origin:center;margin:10px 0}
 .btn-close{margin-top:16px;background:#f3f4f6!important;color:#111!important;border:0;padding:10px 18px;border-radius:50px;font-weight:700;cursor:pointer;width:100%;box-shadow:none!important}
 @media(max-width:480px){h1{font-size:28px}.section h2{font-size:22px}.cards{grid-template-columns:1fr}.btn-big{width:100%!important}.canva-input{flex-direction:column;border-radius:16px;padding:10px}.canva-input button{width:100%!important}}
-/* ===== تعديلات الأزرار الشفافة - Tajer AI ===== */
+/* ===== تعديلات الأزرار الشفافة - Sellora AI ===== */
 .copyRow{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:8px 0}
 .iconCopyBtn{width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;background:transparent!important;border:none!important;box-shadow:none!important;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0!important}
 .iconCopyBtn svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -80,10 +80,11 @@ button, .btn-big, .btn-purple, .btn-green, .btn-orange, .bigBtn, .createBtn, .he
 button:active{transform:scale(.95);box-shadow:0 0 20px rgba(0,255,136,.9)!important}
 #createBtn, #recreateBtn{padding:12px!important;font-size:15px!important;box-shadow:0 0 14px rgba(34,197,94,.6)!important}
 .btn-delete{background:linear-gradient(45deg,#ff3b3b,#ff6b6b)!important;color:#fff!important;width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;font-size:18px!important;border-radius:50%!important;box-shadow:0 0 12px rgba(255,59,59,.7)!important;flex-shrink:0}
-.select-box{width:26px;height:26px;border:2px solid #00ff88;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0;background:#0f1226;cursor:pointer}
-.select-box.checked{background:#22c55e;border-color:#22c55e;box-shadow:0 0 10px rgba(34,197,94,.9)}
-.adItem.selected{border:2px solid #22c55e!important;box-shadow:0 0 12px rgba(34,197,94,.4)}
+.adItem.selected{border:2px solid #22c55e!important;background:rgba(34,197,94,.15)!important;box-shadow:0 0 12px rgba(34,197,94,.4)}
 #bulkBar{display:none;position:sticky;top:60px;z-index:90;background:#ef4444;padding:10px 14px;border-radius:12px;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 #bulkBar button{background:#fff!important;color:#ef4444!important;box-shadow:none!important;padding:7px 14px!important;font-size:13px!important}
 .iconCopyBtn.copied svg{stroke:#22c55e}
 .smallGreenBtn.copied{background:#16a34a!important;box-shadow:0 0 12px rgba(34,197,94,.8)!important}
+/* Sellora AI - كلمة إعلان + إخفاء زرارين النتيجة أثناء التوليد - الصندوق الصغير اتمسح نهائيا */
+.ad-label{font-size:11px;color:#94a3b8;text-align:center;padding:4px 0 2px;background:transparent}
+#result.generating .result-actions{display:none!important}
